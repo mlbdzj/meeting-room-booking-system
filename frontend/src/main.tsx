@@ -23,13 +23,35 @@ createRoot(container).render(
       locale={zhCN}
       theme={{
         token: {
-          // 与 Element Plus 的默认主色保持一致，尽量贴近原有视觉
-          colorPrimary: '#409eff',
-          colorInfo: '#409eff',
-          colorSuccess: '#67c23a',
-          colorWarning: '#e6a23c',
-          colorError: '#f56c6c',
+          // 品牌色见 assets/css/global.css 里的 --app-primary，两处保持一致
+          colorPrimary: '#1677ff',
+          borderRadius: 8,
+          colorBgLayout: '#f5f7fa',
           fontFamily: '"Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        },
+        components: {
+          Layout: {
+            headerHeight: 64,
+            headerPadding: '0 24px',
+            headerBg: '#ffffff',
+            siderBg: '#ffffff',
+            bodyBg: '#f5f7fa',
+          },
+          Menu: {
+            itemBorderRadius: 8,
+            itemMarginInline: 8,
+            itemMarginBlock: 4,
+            itemHeight: 42,
+            itemSelectedBg: '#e6f4ff',
+            itemSelectedColor: '#1677ff',
+          },
+          Card: {
+            borderRadiusLG: 12,
+          },
+          Table: {
+            headerBg: '#fafafa',
+            headerSplitColor: 'transparent',
+          },
         },
       }}
     >

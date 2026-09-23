@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Button, Form, Input } from 'antd'
+import { Button, Form, Input, theme } from 'antd'
 import { IdcardOutlined, LockOutlined, PhoneOutlined, UserOutlined } from '@ant-design/icons'
 
 import { authApi } from '@/api'
+import logo from '@/assets/imgs/logo.png'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { feedback } from '@/utils/feedback'
 
@@ -19,6 +20,7 @@ export default function Register() {
   const navigate = useNavigate()
   const [form] = Form.useForm<RegisterFormValues>()
   const [loading, setLoading] = useState(false)
+  const { token } = theme.useToken()
 
   useDocumentTitle()
 
@@ -45,7 +47,10 @@ export default function Register() {
   return (
     <div className="register-container">
       <div className="register-box">
-        <h1 style={{ fontSize: 24, marginBottom: 26 }}>欢迎注册智能会议室预约系统</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+          <img style={{ width: 40 }} src={logo} alt="" />
+          <h1 style={{ fontSize: 20 }}>欢迎注册智能会议室预约系统</h1>
+        </div>
 
         <Form form={form} labelCol={{ span: 5 }} wrapperCol={{ span: 19 }} size="large" onFinish={submit}>
           <Form.Item
@@ -100,7 +105,7 @@ export default function Register() {
           </Button>
           <div style={{ textAlign: 'right', marginTop: 18 }}>
             已有账号？请
-            <Link style={{ color: '#409eff' }} to="/login">
+            <Link style={{ color: token.colorPrimary }} to="/login">
               登录
             </Link>
           </div>

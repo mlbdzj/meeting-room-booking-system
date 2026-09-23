@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Alert, Button, Form, Input } from 'antd'
+import { Alert, Button, Form, Input, theme } from 'antd'
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
 
 import { authApi } from '@/api'
+import logo from '@/assets/imgs/logo.png'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useUserStore } from '@/store/user'
 import { feedback } from '@/utils/feedback'
@@ -19,6 +20,7 @@ export default function Login() {
   const [searchParams] = useSearchParams()
   const [form] = Form.useForm<LoginFormValues>()
   const [loading, setLoading] = useState(false)
+  const { token } = theme.useToken()
 
   useDocumentTitle()
 
@@ -46,8 +48,11 @@ export default function Login() {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1 style={{ fontSize: 26 }}>会议室预约系统</h1>
-        <div style={{ marginTop: 6, marginBottom: 26, color: '#909399' }}>基于 Agent 的智能会议空间预约平台</div>
+        <img className="login-logo" src={logo} alt="" />
+        <h1 style={{ fontSize: 24, marginTop: 14 }}>会议室预约系统</h1>
+        <div style={{ marginTop: 6, marginBottom: 28, color: token.colorTextTertiary }}>
+          基于 Agent 的智能会议空间预约平台
+        </div>
 
         <Form form={form} size="large" initialValues={{ username: initialUsername }} onFinish={submit}>
           <Form.Item name="username" rules={[{ required: true, message: '请输入账号' }]}>
@@ -61,7 +66,7 @@ export default function Login() {
           </Button>
           <div style={{ textAlign: 'right', marginTop: 18 }}>
             还没有账号？请
-            <Link style={{ color: '#409eff' }} to="/register">
+            <Link style={{ color: token.colorPrimary }} to="/register">
               注册
             </Link>
           </div>

@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Avatar, Button, Drawer, Dropdown, FloatButton, Input, Tag, type MenuProps } from 'antd'
+import { Avatar, Button, Drawer, Dropdown, FloatButton, Input, Tag, theme, type MenuProps } from 'antd'
 import {
   ClockCircleOutlined,
   CloseOutlined,
@@ -166,6 +166,7 @@ function ActionCard({ action, loading, onConfirm, onCancel }: ActionCardProps) {
 
 export default function AgentChat() {
   const displayName = useUserStore((state) => (state.user?.name || state.user?.username || '我').slice(0, 1))
+  const { token } = theme.useToken()
 
   const [visible, setVisible] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -352,9 +353,9 @@ export default function AgentChat() {
     return sessions.map((item) => ({
       key: `load:${item.id}`,
       label: item.title,
-      style: item.id === sessionId ? { color: '#409eff', fontWeight: 'bold' } : undefined,
+      style: item.id === sessionId ? { color: token.colorPrimary, fontWeight: 600 } : undefined,
     }))
-  }, [sessionId, sessions])
+  }, [sessionId, sessions, token.colorPrimary])
 
   const handleHistoryClick = useCallback<NonNullable<MenuProps['onClick']>>(
     ({ key }) => {
@@ -427,7 +428,7 @@ export default function AgentChat() {
 
           {items.map((item) => (
             <div key={item.key} className={`agent-row ${item.role === 'user' ? 'agent-row-user' : 'agent-row-bot'}`}>
-              <Avatar size={28} style={item.role === 'user' ? undefined : { background: '#409eff' }}>
+              <Avatar size={28} style={item.role === 'user' ? undefined : { background: token.colorPrimary }}>
                 {item.role === 'user' ? displayName : 'A'}
               </Avatar>
               <div className="agent-bubble">
@@ -451,7 +452,7 @@ export default function AgentChat() {
 
           {loading && (
             <div className="agent-row agent-row-bot">
-              <Avatar size={28} style={{ background: '#409eff' }}>
+              <Avatar size={28} style={{ background: token.colorPrimary }}>
                 A
               </Avatar>
               <div className="agent-bubble agent-typing">

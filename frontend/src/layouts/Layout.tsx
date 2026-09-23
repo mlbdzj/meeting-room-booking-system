@@ -1,6 +1,17 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Avatar, Dropdown, Form, Input, Layout as AntdLayout, Menu, Modal, Tag, type MenuProps } from 'antd'
+import {
+  Avatar,
+  Dropdown,
+  Form,
+  Input,
+  Layout as AntdLayout,
+  Menu,
+  Modal,
+  Tag,
+  theme,
+  type MenuProps,
+} from 'antd'
 import { DownOutlined } from '@ant-design/icons'
 
 import { authApi } from '@/api'
@@ -32,6 +43,7 @@ export default function Layout() {
   const location = useLocation()
   const user = useUserStore((state) => state.user)
   const displayName = user?.name || user?.username || '未登录'
+  const { token } = theme.useToken()
 
   useDocumentTitle(navTitle(location.pathname))
 
@@ -124,7 +136,7 @@ export default function Layout() {
           </Tag>
           <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenu }} trigger={['click']}>
             <span className="app-user-trigger">
-              <Avatar size={30} style={{ backgroundColor: '#409eff' }}>
+              <Avatar size={32} style={{ backgroundColor: token.colorPrimary }}>
                 {(displayName || 'U').slice(0, 1)}
               </Avatar>
               <span>{displayName}</span>
@@ -135,17 +147,17 @@ export default function Layout() {
       </Header>
 
       <AntdLayout>
-        <Sider width={220} theme="light" style={{ borderRight: '1px solid #e4e7ed' }}>
+        <Sider width={224} theme="light" style={{ borderRight: `1px solid ${token.colorSplit}` }}>
           <Menu
             mode="inline"
             selectedKeys={[location.pathname]}
             items={menuItems}
-            style={{ height: '100%', borderRight: 'none' }}
+            style={{ height: '100%', borderRight: 'none', paddingTop: 8 }}
             onClick={({ key }) => navigate(key)}
           />
         </Sider>
 
-        <Content style={{ backgroundColor: '#f5f7fa', padding: 20 }}>
+        <Content style={{ padding: 24 }}>
           <Outlet />
         </Content>
       </AntdLayout>
