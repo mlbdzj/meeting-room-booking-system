@@ -62,7 +62,7 @@
 | 依赖管理 | 后端 uv（`pyproject.toml` + `uv.lock`），前端 npm |
 | 数据库 | MySQL 8（PyMySQL 驱动） |
 | 鉴权 | 自实现 HMAC-SHA256 签名 Token + PBKDF2 加盐密码哈希（零额外依赖） |
-| 智能助手 | OpenAI 兼容接口（DeepSeek / OpenAI）+ function calling 工具编排 + 本地知识库兜底引擎 |
+| 智能助手 | OpenAI 官方 SDK（`base_url` 指向兼容端点，DeepSeek / OpenAI 通用）+ function calling 工具编排 + 本地知识库兜底引擎 |
 
 ## 三、环境要求
 

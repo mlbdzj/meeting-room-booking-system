@@ -1,10 +1,10 @@
-"""OpenAI 兼容大模型客户端（DeepSeek / OpenAI 等），仅依赖标准库。"""
+"""OpenAI 兼容大模型客户端（DeepSeek / OpenAI 等），基于官方 openai SDK。"""
 
-import json
 import logging
 import os
-import urllib.error
-import urllib.request
+
+from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI, OpenAIError
+from openai.types.chat import ChatCompletionMessage
 
 from app.core.config import settings
 
@@ -50,7 +50,36 @@ def resolve_provider() -> dict | None:
     return {"name": preset, "base_url": base_url, "model": model, "api_key": api_key}
 
 
+def _client(provider: dict) -> OpenAI:
+    """按当前配置建客户端：base_url 指向兼容端点，其余行为与官方 SDK 一致。"""
+    return OpenAI(
+        api_key=provider["api_key"],
+        base_url=provider["base_url"],
+        timeout=settings.LLM_TIMEOUT,
+    )
+
+
+def _to_message_dict(message: ChatCompletionMessage) -> dict:
+    """把 SDK 的返回转成可回灌进 messages 的纯字典。
+
+    只保留兼容端点认识的字段，SDK 补出的 refusal / annotations 等 null 字段不往外带。
+    """
+    result: dict = {"content": message.content or ""}
+    if message.tool_calls:
+        result["tool_calls"] = [call.model_dump() for call in message.tool_calls]
+    return result
+
+
+def _error_detail(error: APIStatusError) -> str:
+    """尽量取出接口返回的原文，便于排查；取不到就退回异常自身的描述。"""
+    try:
+        return str(error.response.text)[:300]
+    except Exception:  # noqa: BLE001 - 兜底分支不该盖掉原始错误
+        return str(error)[:300]
+
+
 def chat_completion(messages: list[dict], tools: list[dict] | None = None) -> dict:
+    """调用 /chat/completions，返回模型的 message（可能带 tool_calls）。"""
     provider = resolve_provider()
     if provider is None:
         raise LLMError("未配置大模型，已使用本地知识库引擎")
@@ -59,34 +88,24 @@ def chat_completion(messages: list[dict], tools: list[dict] | None = None) -> di
         "model": provider["model"],
         "messages": messages,
         "temperature": 0.3,
-        "stream": False,
     }
     if tools:
         payload["tools"] = tools
         payload["tool_choice"] = "auto"
 
-    request = urllib.request.Request(
-        f"{provider['base_url']}/chat/completions",
-        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {provider['api_key']}",
-        },
-        method="POST",
-    )
-
     try:
-        with urllib.request.urlopen(request, timeout=settings.LLM_TIMEOUT) as response:
-            data = json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as error:
-        detail = error.read().decode("utf-8", errors="ignore")[:300]
-        raise LLMError(f"大模型接口返回 {error.code}：{detail}") from error
-    except urllib.error.URLError as error:
-        raise LLMError(f"无法连接大模型服务：{error.reason}") from error
-    except (TimeoutError, json.JSONDecodeError) as error:
+        with _client(provider) as client:
+            completion = client.chat.completions.create(**payload)
+    except APITimeoutError as error:
+        raise LLMError(f"大模型调用超时：{error}") from error
+    except APIConnectionError as error:
+        raise LLMError(f"无法连接大模型服务：{error}") from error
+    except APIStatusError as error:
+        raise LLMError(f"大模型接口返回 {error.status_code}：{_error_detail(error)}") from error
+    except OpenAIError as error:
         raise LLMError(f"大模型调用失败：{error}") from error
 
-    choices = data.get("choices") or []
+    choices = completion.choices or []
     if not choices:
         raise LLMError("大模型返回内容为空")
-    return choices[0].get("message", {})
+    return _to_message_dict(choices[0].message)
