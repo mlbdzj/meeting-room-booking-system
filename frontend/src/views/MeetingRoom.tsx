@@ -117,22 +117,22 @@ export default function MeetingRoom() {
   }
 
   const columns: TableColumnsType<MeetingRoomRecord> = [
-    { title: '会议室类型名称', dataIndex: 'name', width: 130, ellipsis: true },
-    { title: '会议室类型编号', dataIndex: 'code', width: 120 },
-    { title: '床型', dataIndex: 'layout', width: 130, ellipsis: true },
-    { title: '所属会议空间', dataIndex: 'venue_name', width: 170, ellipsis: true },
-    { title: '价格/晚', width: 100, render: (_, row) => money(row.price) },
-    { title: '可住人数', dataIndex: 'capacity', width: 100 },
-    { title: '会议室余量', dataIndex: 'quantity', width: 80 },
+    { title: '会议室类型名称', dataIndex: 'name', width: 120, ellipsis: true },
+    { title: '会议室类型编号', dataIndex: 'code', width: 110 },
+    { title: '床型', dataIndex: 'layout', width: 110, ellipsis: true },
+    { title: '所属会议空间', dataIndex: 'venue_name', width: 140, ellipsis: true },
+    { title: '价格/晚', width: 90, render: (_, row) => money(row.price) },
+    { title: '可住人数', dataIndex: 'capacity', width: 90 },
+    { title: '会议室余量', dataIndex: 'quantity', width: 70 },
     {
       title: '状态',
-      width: 100,
+      width: 90,
       render: (_, row) => <Tag color={MEETING_ROOM_STATUS_COLOR[row.status]}>{MEETING_ROOM_STATUS_TEXT[row.status]}</Tag>,
     },
-    { title: '说明', dataIndex: 'description', width: 160, ellipsis: true },
+    { title: '说明', dataIndex: 'description', width: 140, ellipsis: true },
     {
       title: '操作',
-      width: 130,
+      width: 110,
       fixed: 'right',
       render: (_, row) => (
         <>
@@ -190,7 +190,7 @@ export default function MeetingRoom() {
           loading={loading}
           columns={columns}
           dataSource={records}
-          scroll={{ x: 1300 }}
+          scroll={{ x: 1070 }}
           locale={{ emptyText: '暂无会议室类型数据' }}
           pagination={{
             current: query.page,

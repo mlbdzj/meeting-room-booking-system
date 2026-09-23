@@ -1,7 +1,11 @@
-/* 品牌色：与 main.tsx 里 ConfigProvider 的 colorPrimary / itemSelectedBg 保持一致 */
+/* 与 antd 主题令牌同值，供纯 CSS 使用（组件内请优先用 theme.useToken()） */
 :root {
   --app-primary: #1677ff;
   --app-primary-soft: #e6f4ff;
+  --app-text-secondary: #595959;
+  --app-text-tertiary: #8c8c8c;
+  --app-text-quaternary: #bfbfbf;
+  --app-border: rgba(5, 5, 5, 0.06);
 }
 
 * {
@@ -149,6 +153,15 @@ img {
   flex-wrap: wrap;
 }
 
+/* 表格操作列里的链接按钮：antd 默认带 15px 横向内边距，多个按钮会把列撑到换行 */
+.ant-table-tbody .ant-btn-link {
+  padding-inline: 0;
+}
+
+.ant-table-tbody .ant-btn-link + .ant-btn-link {
+  margin-inline-start: 12px;
+}
+
 /* ===== 客服助手 ===== */
 .agent-drawer .ant-drawer-body {
   display: flex;
@@ -163,7 +176,7 @@ img {
   justify-content: space-between;
   gap: 8px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid var(--app-border);
 }
 
 .agent-title {
@@ -179,7 +192,7 @@ img {
   align-items: center;
   gap: 8px;
   margin-top: 6px;
-  color: #909399;
+  color: var(--app-text-tertiary);
   font-size: 12px;
 }
 
@@ -201,7 +214,7 @@ img {
 
 .agent-welcome-desc {
   margin-top: 6px;
-  color: #909399;
+  color: var(--app-text-tertiary);
   font-size: 13px;
   line-height: 20px;
 }
@@ -324,7 +337,7 @@ img {
   height: 6px;
   margin-right: 4px;
   border-radius: 50%;
-  background-color: #c0c4cc;
+  background-color: var(--app-text-quaternary);
   animation: agent-blink 1.2s infinite ease-in-out;
 }
 

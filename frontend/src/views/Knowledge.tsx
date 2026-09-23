@@ -1,5 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
-import { AutoComplete, Button, Card, Form, Input, Modal, Select, Switch, Table, Tag, type TableColumnsType } from 'antd'
+import {
+  AutoComplete,
+  Button,
+  Card,
+  Form,
+  Input,
+  Modal,
+  Select,
+  Switch,
+  Table,
+  Tag,
+  theme,
+  type TableColumnsType,
+} from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 
 import { knowledgeApi } from '@/api'
@@ -15,6 +28,7 @@ const STATUS_OPTIONS = [
 
 export default function Knowledge() {
   const [loading, setLoading] = useState(false)
+  const { token } = theme.useToken()
   const [submitting, setSubmitting] = useState(false)
   const [records, setRecords] = useState<KnowledgeRecord[]>([])
   const [categories, setCategories] = useState<string[]>([])
@@ -143,7 +157,7 @@ export default function Knowledge() {
         <div className="page-block-head">
           <div>
             <div className="page-title">客服知识库</div>
-            <div style={{ marginTop: 6, color: '#909399', fontSize: 13 }}>
+            <div style={{ marginTop: 6, color: token.colorTextTertiary, fontSize: 13 }}>
               知识库是客服助手回答同学提问的依据，也是大模型不可用时的兜底答案，建议把常见问题都补充进来。
             </div>
           </div>

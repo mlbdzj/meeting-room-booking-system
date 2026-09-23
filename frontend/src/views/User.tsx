@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Button, Card, Form, Input, Modal, Select, Switch, Table, Tag, type TableColumnsType } from 'antd'
+import { Button, Card, Form, Input, Modal, Select, Switch, Table, Tag, theme, type TableColumnsType } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 
 import { userApi } from '@/api'
@@ -22,6 +22,7 @@ interface UserFormValues extends UserPayload {
 
 export default function UserPage() {
   const currentUserId = useUserStore((state) => state.user?.id)
+  const { token } = theme.useToken()
 
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -160,10 +161,10 @@ export default function UserPage() {
   }
 
   const columns: TableColumnsType<UserInfo> = [
-    { title: '账号', dataIndex: 'username', width: 130 },
-    { title: '姓名', dataIndex: 'name', width: 110 },
-    { title: '手机号', width: 130, render: (_, row) => row.phone || '-' },
-    { title: '邮箱', width: 170, render: (_, row) => row.email || '-' },
+    { title: '账号', dataIndex: 'username', width: 120 },
+    { title: '姓名', dataIndex: 'name', width: 100 },
+    { title: '手机号', width: 120, render: (_, row) => row.phone || '-' },
+    { title: '邮箱', width: 200, render: (_, row) => row.email || '-' },
     {
       title: '角色',
       width: 110,
@@ -180,17 +181,17 @@ export default function UserPage() {
         />
       ),
     },
-    { title: '创建时间', width: 170, render: (_, row) => toDateTimeString(row.created_at) },
+    { title: '创建时间', width: 160, render: (_, row) => toDateTimeString(row.created_at) },
     {
       title: '操作',
-      width: 200,
+      width: 170,
       fixed: 'right',
       render: (_, row) => (
         <>
           <Button type="link" onClick={() => openForm(row)}>
             编辑
           </Button>
-          <Button type="link" style={{ color: '#e6a23c' }} onClick={() => openReset(row)}>
+          <Button type="link" style={{ color: token.colorWarning }} onClick={() => openReset(row)}>
             重置密码
           </Button>
           <Button type="link" danger disabled={row.id === currentUserId} onClick={() => remove(row)}>
@@ -236,7 +237,7 @@ export default function UserPage() {
           loading={loading}
           columns={columns}
           dataSource={records}
-          scroll={{ x: 1200 }}
+          scroll={{ x: 1080 }}
           locale={{ emptyText: '暂无会员数据' }}
           pagination={{
             current: query.page,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Button, Card, Select, Table, Tag, type TableColumnsType } from 'antd'
+import { Button, Card, Select, Table, Tag, theme, type TableColumnsType } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 
 import { reservationApi, venueApi } from '@/api'
@@ -15,6 +15,7 @@ const STATUS_OPTIONS = Object.entries(RESERVATION_STATUS_TEXT).map(([value, labe
 
 export default function Reservation() {
   const [loading, setLoading] = useState(false)
+  const { token } = theme.useToken()
   const [records, setRecords] = useState<ReservationRecord[]>([])
   const [total, setTotal] = useState(0)
   const [venues, setVenues] = useState<Venue[]>([])
@@ -69,16 +70,16 @@ export default function Reservation() {
   const columns: TableColumnsType<ReservationRecord> = [
     {
       title: '会议空间 / 会议室类型',
-      width: 200,
+      width: 190,
       ellipsis: true,
       render: (_, row) => (
         <div>
           <div>{row.venue_name}</div>
-          <div style={{ color: '#909399', fontSize: 12 }}>{row.meeting_room_name}</div>
+          <div style={{ color: token.colorTextTertiary, fontSize: 12 }}>{row.meeting_room_name}</div>
         </div>
       ),
     },
-    { title: '使用开始 / 使用结束', width: 190, render: (_, row) => stayRange(row) },
+    { title: '使用开始 / 使用结束', width: 180, render: (_, row) => stayRange(row) },
     { title: '间数 / 人数', width: 110, render: (_, row) => `${row.rooms} 间 / ${row.attendees} 人` },
     { title: '总价', width: 100, render: (_, row) => money(row.total_amount) },
     {
@@ -110,7 +111,7 @@ export default function Reservation() {
             取消预约
           </Button>
         ) : (
-          <span style={{ color: '#c0c4cc' }}>-</span>
+          <span style={{ color: token.colorTextQuaternary }}>-</span>
         ),
     },
   ]
@@ -142,7 +143,7 @@ export default function Reservation() {
           loading={loading}
           columns={columns}
           dataSource={records}
-          scroll={{ x: 1100 }}
+          scroll={{ x: 1080 }}
           locale={{ emptyText: '暂无预约，去「会议空间管理」预约一间吧' }}
           pagination={{
             current: page,
