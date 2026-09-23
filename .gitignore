@@ -1,0 +1,48 @@
+# ===== 环境变量与密钥（严禁提交）=====
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ===== Node / 前端 =====
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+coverage/
+.eslintcache
+*.tsbuildinfo
+
+# ===== 编辑器与操作系统 =====
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ===== 日志与临时文件 =====
+*.log
+logs/
+tmp/
+*.bak
+
+# ===== 个人文件（不随仓库发布）=====
+RESUME.md

@@ -1,0 +1,28 @@
+[project]
+name = "meeting-room-booking-backend"
+version = "1.0.0"
+description = "智能会议室预约系统后端：FastAPI + SQLAlchemy 2 + MySQL，内置客服助手（function calling + 本地知识库兜底）"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.115.13",
+    "uvicorn==0.34.0",
+    "sqlalchemy==2.0.41",
+    "pymysql==1.1.1",
+    "pydantic-settings==2.7.1",
+    "python-dotenv==1.2.3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "httpx==0.28.1",
+]
+
+[tool.uv]
+# 这是一个应用而不是要发布到 PyPI 的库，不需要构建/安装自身
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
