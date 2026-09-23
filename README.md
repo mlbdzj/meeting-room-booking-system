@@ -237,7 +237,7 @@ frontend/
 - 工具调用与写操作都受当前登录用户权限约束，助手不能替他人下单
 - 大模型只负责理解与组织语言，决定「能不能订」的是后端规则引擎
 
-相关实现：`app/agent/reservation.py`（口语解析与草稿）、`app/services/reservation_service.py`（页面与助手共用的库存/价格校验）、`app/api/routers/agent.py`（确认 / 取消接口）、`frontend/src/components/AgentChat.vue`（确认卡片）。
+相关实现：`app/agent/reservation.py`（口语解析与草稿）、`app/services/reservation_service.py`（页面与助手共用的库存/价格校验）、`app/api/routers/agent.py`（确认 / 取消接口）、`frontend/src/components/AgentChat.tsx`（确认卡片）。
 
 ### 4. 知识库维护
 

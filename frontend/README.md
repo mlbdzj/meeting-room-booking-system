@@ -9,7 +9,7 @@ React 19 + TypeScript + Ant Design 5 + Vite 8 单页应用。
 | 框架 | React 19 + TypeScript |
 | 构建 | Vite 8 |
 | 路由 | React Router 7（`createBrowserRouter`） |
-| UI 组件 | Ant Design 5（中文语言包，主色对齐 Element Plus 的 `#409eff`） |
+| UI 组件 | Ant Design 5（中文语言包 + 统一 design token，主色取 antd 默认蓝） |
 | 状态 | Zustand（登录态持久化到 localStorage） |
 | HTTP | 原生 `fetch` 封装（`src/api/request.ts`） |
 | 日期 | dayjs |
