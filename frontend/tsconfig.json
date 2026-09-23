@@ -16,11 +16,9 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "types": ["vite/client", "node"],
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    },
-    "ignoreDeprecations": "6.0"
+    }
   },
   "include": ["src", "vite.config.ts"]
 }
