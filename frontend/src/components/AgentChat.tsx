@@ -20,6 +20,7 @@ interface ChatItem {
   role: 'user' | 'assistant'
   content: string
   source: string
+  tools?: string
   action: ChatAction | null
   messageId?: number
 }
@@ -38,6 +39,7 @@ function toChatItem(message: ChatMessage): ChatItem {
     role: message.role === 'user' ? 'user' : 'assistant',
     content: message.content,
     source: message.source || '',
+    tools: message.tools || '',
     action: message.action ?? null,
     messageId: message.id,
   }
@@ -45,9 +47,33 @@ function toChatItem(message: ChatMessage): ChatItem {
 
 function sourceText(source: string): string {
   if (source === 'llm') return '由大模型结合系统数据生成'
-  if (source === 'local-fallback') return '大模型暂不可用，回答来自本地知识库'
+  if (source === 'local-fallback') return '大模型暂不可用，由本地规则引擎结合系统数据生成'
   if (source === 'system') return '系统操作结果'
-  return '回答来自本地知识库'
+  // source === 'local'：本地规则引擎，可能调用工具查询实时数据，并非只查知识库
+  return '由本地规则引擎结合系统数据生成'
+}
+
+/** 工具名 -> 中文说明，让用户知道这条回答查了哪些实时数据 */
+const TOOL_TEXT: Record<string, string> = {
+  search_knowledge: '检索知识库',
+  list_venues: '查询会议空间列表',
+  check_room_availability: '查询会议室类型与剩余会议室余量',
+  list_my_reservations: '查询我的预约',
+  list_pending_reservations: '查询待确认预约',
+  system_statistics: '查询经营统计',
+  reservation_rules: '查询预约规则',
+  prepare_reservation: '生成预约预览',
+  confirm_reservation: '确认下单',
+  cancel_reservation: '取消预约草稿',
+}
+
+function toolsText(tools?: string): string {
+  const names = (tools || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+  if (!names.length) return ''
+  return names.map((name) => TOOL_TEXT[name] ?? name).join('、')
 }
 
 function actionStatusText(status?: string): string {
@@ -390,7 +416,7 @@ export default function AgentChat() {
             </div>
             <div className="agent-subtitle">
               <Tag color={status.llm_enabled ? 'success' : 'default'}>
-                {status.llm_enabled ? '大模型模式' : '本地知识库模式'}
+                {status.llm_enabled ? '大模型模式' : '本地规则引擎模式'}
               </Tag>
               {status.llm_enabled && <span className="agent-model">{status.model}</span>}
               <span className="agent-model">知识库 {status.knowledge_total} 条</span>
@@ -443,8 +469,13 @@ export default function AgentChat() {
                     onCancel={() => void cancelAction(item)}
                   />
                 )}
-                {item.role === 'assistant' && item.source && (
-                  <div className="agent-source">{sourceText(item.source)}</div>
+                {item.role === 'assistant' && (item.source || item.tools) && (
+                  <div className="agent-source">
+                    {item.source && <span>{sourceText(item.source)}</span>}
+                    {toolsText(item.tools) && (
+                      <span>{item.source ? '；' : ''}已调用：{toolsText(item.tools)}</span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
