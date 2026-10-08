@@ -2,7 +2,7 @@
 name = "meeting-room-booking-backend"
 version = "1.0.0"
 description = "智能会议室预约系统后端：FastAPI + SQLAlchemy 2 + MySQL，内置客服助手（function calling + 本地知识库兜底）"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     "fastapi[standard]==0.115.13",
     "uvicorn==0.34.0",
