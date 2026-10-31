@@ -37,13 +37,11 @@ import { feedback } from '@/utils/feedback'
 const PAGE_SIZE = 10
 
 const STATUS_OPTIONS = [
-  { label: '营业中', value: 1 },
-  { label: '暂停营业', value: 0 },
+  { label: '开放预约', value: 1 },
+  { label: '暂停开放', value: 0 },
 ]
 
-interface VenueFormValues extends Omit<VenuePayload, 'status' | 'open_time' | 'close_time'> {
-  open_time: string
-  close_time: string
+interface VenueFormValues extends VenuePayload {
   status: number
 }
 
@@ -99,10 +97,10 @@ export default function Venue() {
       name: row?.name || '',
       city: row?.city || '',
       address: row?.address || '',
-      star: row?.star || 4,
-      room_count: row?.room_count || 100,
-      open_time: row?.open_time || '14:00',
-      close_time: row?.close_time || '12:00',
+      rating: row?.rating || 4,
+      room_count: row?.room_count || 10,
+      open_time: row?.open_time || '09:00',
+      close_time: row?.close_time || '18:00',
       status: row?.status ?? 1,
       description: row?.description || '',
     })
@@ -114,19 +112,8 @@ export default function Venue() {
     if (!values) return
     setSubmitting(true)
     try {
-      const payload: VenuePayload = {
-        name: values.name,
-        city: values.city,
-        address: values.address,
-        star: values.star,
-        room_count: values.room_count,
-        open_time: values.open_time,
-        close_time: values.close_time,
-        status: values.status,
-        description: values.description,
-      }
-      if (editingId) await venueApi.update(editingId, payload)
-      else await venueApi.create(payload)
+      if (editingId) await venueApi.update(editingId, values)
+      else await venueApi.create(values)
       feedback.success('保存成功')
       setFormOpen(false)
       await load()
@@ -155,23 +142,25 @@ export default function Venue() {
   }
 
   const columns: TableColumnsType<VenueRecord> = [
-    { title: '会议空间名称', dataIndex: 'name', width: 170, ellipsis: true },
+    { title: '空间名称', dataIndex: 'name', width: 180, ellipsis: true },
     { title: '城市', dataIndex: 'city', width: 80 },
     { title: '地址', dataIndex: 'address', width: 180, ellipsis: true },
-    { title: '星级', width: 80, render: (_, row) => `${row.star} 星` },
-    { title: '会议室数', dataIndex: 'room_count', width: 80 },
+    { title: '配套等级', width: 90, render: (_, row) => `${row.rating} 级` },
+    { title: '会议室总数', dataIndex: 'room_count', width: 100 },
     {
-      title: '使用开始/使用结束',
+      title: '开放时段',
       width: 120,
-      render: (_, row) => `${row.open_time} / ${row.close_time}`,
+      render: (_, row) => `${row.open_time} - ${row.close_time}`,
     },
-    { title: '会议室类型', dataIndex: 'meeting_room_count', width: 70 },
+    { title: '会议室规格', dataIndex: 'meeting_room_count', width: 100 },
     { title: '预约', dataIndex: 'reservation_count', width: 70 },
     {
       title: '状态',
-      width: 90,
+      width: 100,
       render: (_, row) => (
-        <Tag color={row.status === 1 ? 'success' : 'default'}>{row.status === 1 ? '营业中' : '暂停营业'}</Tag>
+        <Tag color={row.status === 1 ? 'success' : 'default'}>
+          {row.status === 1 ? '开放预约' : '暂停开放'}
+        </Tag>
       ),
     },
     {
@@ -202,7 +191,7 @@ export default function Venue() {
           <div className="page-toolbar">
             <Input.Search
               value={keywordInput}
-              placeholder="搜索会议空间名称/地址"
+              placeholder="搜索空间名称/地址"
               allowClear
               style={{ width: 220 }}
               onChange={(event) => setKeywordInput(event.target.value)}
@@ -210,7 +199,7 @@ export default function Venue() {
             />
             <Select
               value={query.status === '' ? undefined : query.status}
-              placeholder="营业状态"
+              placeholder="开放状态"
               allowClear
               style={{ width: 140 }}
               options={STATUS_OPTIONS}
@@ -218,7 +207,7 @@ export default function Venue() {
             />
             {isAdmin && (
               <Button type="primary" icon={<PlusOutlined />} onClick={() => openForm()}>
-                新增会议空间
+                新增空间
               </Button>
             )}
           </div>
@@ -232,7 +221,7 @@ export default function Venue() {
             loading={loading}
             columns={columns}
             dataSource={venues}
-            scroll={{ x: 1090 }}
+            scroll={{ x: 1120 }}
             locale={{ emptyText: '暂无会议空间数据' }}
             pagination={{
               current: query.page,
@@ -253,7 +242,7 @@ export default function Venue() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: 16, fontWeight: 'bold' }}>{item.name}</span>
                     <Tag color={item.status === 1 ? 'success' : 'default'}>
-                      {item.status === 1 ? '营业中' : '暂停营业'}
+                      {item.status === 1 ? '开放预约' : '暂停开放'}
                     </Tag>
                   </div>
                   <div style={{ marginTop: 10, color: token.colorTextSecondary, lineHeight: '24px' }}>
@@ -261,13 +250,13 @@ export default function Venue() {
                       <EnvironmentOutlined /> {item.city} · {item.address || '地址待补充'}
                     </div>
                     <div>
-                      <StarOutlined /> {item.star} 星会议空间 · 会议室 {item.room_count} 间
+                      <StarOutlined /> {item.rating} 级会议空间 · 共 {item.room_count} 间会议室
                     </div>
                     <div>
-                      <ClockCircleOutlined /> 使用开始 {item.open_time} 之后 / 使用结束 {item.close_time} 之前
+                      <ClockCircleOutlined /> 开放时段 {item.open_time} - {item.close_time}
                     </div>
                     <div>
-                      <AppstoreOutlined /> 可预约会议室类型 {item.meeting_room_count} 种
+                      <AppstoreOutlined /> 可预约会议室规格 {item.meeting_room_count} 个
                     </div>
                   </div>
                   <div style={{ marginTop: 10, color: token.colorTextTertiary, minHeight: 40 }}>
@@ -305,8 +294,8 @@ export default function Venue() {
         onCancel={() => setFormOpen(false)}
       >
         <Form form={form} labelCol={{ span: 6 }} wrapperCol={{ span: 18 }} style={{ marginTop: 20 }}>
-          <Form.Item label="会议空间名称" name="name" rules={[{ required: true, message: '请输入会议空间名称' }]}>
-            <Input placeholder="例如：杭州西湖智选假日会议空间" />
+          <Form.Item label="空间名称" name="name" rules={[{ required: true, message: '请输入空间名称' }]}>
+            <Input placeholder="例如：杭州西湖商务中心" />
           </Form.Item>
           <Form.Item label="城市" name="city" rules={[{ required: true, message: '请输入城市' }]}>
             <Input placeholder="例如：杭州" />
@@ -314,39 +303,39 @@ export default function Venue() {
           <Form.Item label="地址" name="address">
             <Input placeholder="例如：西湖区文三路 88 号" />
           </Form.Item>
-          <Form.Item label="星级" name="star">
+          <Form.Item label="配套等级" name="rating">
             <Rate />
           </Form.Item>
-          <Form.Item label="会议室数" name="room_count" rules={[{ required: true, message: '请输入会议室数' }]}>
+          <Form.Item label="会议室总数" name="room_count" rules={[{ required: true, message: '请输入会议室总数' }]}>
             <InputNumber min={1} max={5000} />
           </Form.Item>
           <Form.Item
-            label="使用开始时间"
+            label="开放时间"
             name="open_time"
-            rules={[{ required: true, message: '请选择使用开始时间' }]}
+            rules={[{ required: true, message: '请选择开放时间' }]}
             getValueProps={(value?: string) => ({ value: value ? dayjs(value, 'HH:mm') : undefined })}
             normalize={(value?: Dayjs | null) => (value ? value.format('HH:mm') : '')}
           >
             <TimePicker format="HH:mm" minuteStep={30} style={{ width: 150 }} />
           </Form.Item>
           <Form.Item
-            label="使用结束时间"
+            label="关闭时间"
             name="close_time"
-            rules={[{ required: true, message: '请选择使用结束时间' }]}
+            rules={[{ required: true, message: '请选择关闭时间' }]}
             getValueProps={(value?: string) => ({ value: value ? dayjs(value, 'HH:mm') : undefined })}
             normalize={(value?: Dayjs | null) => (value ? value.format('HH:mm') : '')}
           >
             <TimePicker format="HH:mm" minuteStep={30} style={{ width: 150 }} />
           </Form.Item>
           <Form.Item
-            label="营业状态"
+            label="开放状态"
             name="status"
             getValueProps={(value?: number) => ({ checked: value === 1 })}
             normalize={(checked?: boolean) => (checked ? 1 : 0)}
           >
-            <Switch checkedChildren="营业中" unCheckedChildren="暂停营业" />
+            <Switch checkedChildren="开放预约" unCheckedChildren="暂停开放" />
           </Form.Item>
-          <Form.Item label="会议空间简介">
+          <Form.Item label="空间简介">
             <Form.Item name="description" noStyle>
               <Input.TextArea rows={3} maxLength={200} showCount />
             </Form.Item>

@@ -10,9 +10,10 @@ class MeetingRoomIn(BaseModel):
     code: str = Field(default="", max_length=50)
     layout: str = Field(default="", max_length=40)
     venue_id: int = Field(ge=1)
-    price: float = Field(default=0, ge=0, le=999999)
-    capacity: int = Field(default=2, ge=1, le=20)
+    hourly_price: float = Field(default=0, ge=0, le=999999)
+    capacity: int = Field(default=2, ge=1, le=500)
     quantity: int = Field(default=1, ge=1, le=999)
+    equipment: str = Field(default="", max_length=500)
     status: str = "open"
     description: str = ""
 
@@ -20,7 +21,7 @@ class MeetingRoomIn(BaseModel):
     @classmethod
     def check_status(cls, value: str) -> str:
         if value not in MEETING_ROOM_STATUS:
-            raise ValueError("会议室类型状态不合法")
+            raise ValueError("会议室状态不合法")
         return value
 
 
@@ -33,9 +34,10 @@ class MeetingRoomOut(BaseModel):
     layout: str
     venue_id: int
     venue_name: str = ""
-    price: float
+    hourly_price: float
     capacity: int
     quantity: int
+    equipment: str
     status: str
     description: str
     created_at: datetime | None = None

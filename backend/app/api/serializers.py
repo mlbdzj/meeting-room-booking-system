@@ -1,6 +1,6 @@
-from datetime import date, datetime
+from datetime import datetime
 
-from app.models import Reservation, Venue, MeetingRoom, User
+from app.models import MeetingRoom, Reservation, User, Venue
 
 RESERVATION_STATUS_TEXT = {
     "pending": "待确认",
@@ -13,17 +13,19 @@ RESERVATION_STATUS_TEXT = {
 MEETING_ROOM_STATUS_TEXT = {
     "open": "可预约",
     "maintenance": "维护中",
-    "closed": "停售",
+    "closed": "停用",
 }
 
 
-def venue_to_dict(venue: Venue, meeting_room_count: int = 0, reservation_count: int = 0) -> dict:
+def venue_to_dict(
+    venue: Venue, meeting_room_count: int = 0, reservation_count: int = 0
+) -> dict:
     return {
         "id": venue.id,
         "name": venue.name,
         "city": venue.city,
         "address": venue.address,
-        "star": venue.star,
+        "rating": venue.rating,
         "room_count": venue.room_count,
         "open_time": venue.open_time,
         "close_time": venue.close_time,
@@ -43,9 +45,10 @@ def meeting_room_to_dict(meeting_room: MeetingRoom, venue_name: str = "") -> dic
         "layout": meeting_room.layout,
         "venue_id": meeting_room.venue_id,
         "venue_name": venue_name,
-        "price": float(meeting_room.price or 0),
+        "hourly_price": float(meeting_room.hourly_price or 0),
         "capacity": meeting_room.capacity,
         "quantity": meeting_room.quantity,
+        "equipment": meeting_room.equipment,
         "status": meeting_room.status,
         "description": meeting_room.description,
         "created_at": meeting_room.created_at,
@@ -70,7 +73,7 @@ def reservation_to_dict(
         "user_name": (user.name or user.username) if user else "",
         "start_at": reservation.start_at,
         "end_at": reservation.end_at,
-        "hours": reservation.hours,
+        "hours": float(reservation.hours or 0),
         "rooms": reservation.rooms,
         "attendees": reservation.attendees,
         "contact_phone": reservation.contact_phone,
@@ -86,11 +89,11 @@ def reservation_to_dict(
 
 
 def refresh_completed_status(db, reservations: list[Reservation]) -> None:
-    """使用结束日期已过的已确认预约，自动标记为已完成。"""
-    today = date.today()
+    """结束时间已过的已确认预约，自动标记为已完成。"""
+    now = datetime.now()
     changed = False
     for reservation in reservations:
-        if reservation.status == "confirmed" and reservation.end_at < today:
+        if reservation.status == "confirmed" and reservation.end_at < now:
             reservation.status = "completed"
             changed = True
     if changed:

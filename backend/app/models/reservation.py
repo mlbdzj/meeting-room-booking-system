@@ -1,11 +1,11 @@
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, func
+from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
 
 
 class Reservation(Base):
-    """预约：某会议室类型在 [start_at, end_at) 区间内预约若干间。"""
+    """会议室预约：在 [start_at, end_at) 区间占用若干间。"""
 
     __tablename__ = "reservation"
 
@@ -13,9 +13,9 @@ class Reservation(Base):
     venue_id: Mapped[int] = mapped_column(ForeignKey("venue.id"), nullable=False, index=True)
     meeting_room_id: Mapped[int] = mapped_column(ForeignKey("meeting_room.id"), nullable=False, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("sys_user.id"), nullable=False, index=True)
-    start_at: Mapped[object] = mapped_column(Date, nullable=False, index=True)
-    end_at: Mapped[object] = mapped_column(Date, nullable=False, index=True)
-    hours: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    start_at: Mapped[object] = mapped_column(DateTime, nullable=False, index=True)
+    end_at: Mapped[object] = mapped_column(DateTime, nullable=False, index=True)
+    hours: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False, default=1)
     rooms: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     attendees: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     contact_phone: Mapped[str] = mapped_column(String(20), nullable=False, default="")

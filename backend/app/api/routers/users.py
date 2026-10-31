@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_admin
 from app.core.security import hash_password
 from app.db.session import get_db
-from app.models import Reservation, ChatSession, User
+from app.models import ChatSession, Reservation, User
 from app.schemas.common import Message, Page
 from app.schemas.user import PasswordUpdate, UserCreate, UserOut, UserUpdate
 
@@ -109,11 +109,17 @@ def delete_user(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="不能删除当前登录账号")
 
     # 同步清理所有指向该用户的外键引用，避免约束导致删除失败：
-    # 1) 该用户作为下单人产生的预约记录；
-    for reservation in db.scalars(select(Reservation).where(Reservation.user_id == user_id)).all():
+    # 1) 该用户作为预约人产生的预约记录；
+    for reservation in db.scalars(
+        select(Reservation).where(Reservation.user_id == user_id)
+    ).all():
         db.delete(reservation)
     # 2) 该用户作为审核人留下的引用（管理员被删除时可能命中），置空而非删除预约；
-    db.execute(update(Reservation).where(Reservation.reviewer_id == user_id).values(reviewer_id=None))
+    db.execute(
+        update(Reservation)
+        .where(Reservation.reviewer_id == user_id)
+        .values(reviewer_id=None)
+    )
     # 3) 该用户的客服对话记录（删除会话会级联删除其消息）。
     for session in db.scalars(select(ChatSession).where(ChatSession.user_id == user_id)).all():
         db.delete(session)

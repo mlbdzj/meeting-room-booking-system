@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import {
   AuditOutlined,
-  BankOutlined,
+  ApartmentOutlined,
   CalendarOutlined,
   DashboardOutlined,
   MessageOutlined,
@@ -22,12 +22,12 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { path: '/manager/home', title: '首页概览', icon: <DashboardOutlined /> },
-  { path: '/manager/venue', title: '会议空间管理', icon: <BankOutlined /> },
-  { path: '/manager/meeting-room', title: '会议室类型管理', icon: <TagsOutlined />, roles: ['admin'] },
+  { path: '/manager/venue', title: '会议空间管理', icon: <ApartmentOutlined /> },
+  { path: '/manager/meeting-room', title: '会议室管理', icon: <TagsOutlined />, roles: ['admin'] },
   { path: '/manager/user', title: '会员管理', icon: <TeamOutlined />, roles: ['admin'] },
   { path: '/manager/reservation', title: '我的预约', icon: <CalendarOutlined /> },
-  { path: '/manager/order-confirm', title: '预约确认', icon: <AuditOutlined />, roles: ['admin'] },
-  { path: '/manager/knowledge', title: '客服知识库', icon: <MessageOutlined />, roles: ['admin'] },
+  { path: '/manager/reservation-review', title: '预约审核', icon: <AuditOutlined />, roles: ['admin'] },
+  { path: '/manager/knowledge', title: '预约知识库', icon: <MessageOutlined />, roles: ['admin'] },
 ]
 
 export function visibleNavItems(role?: Role): NavItem[] {

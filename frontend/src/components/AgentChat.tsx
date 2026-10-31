@@ -56,14 +56,14 @@ function sourceText(source: string): string {
 /** 工具名 -> 中文说明，让用户知道这条回答查了哪些实时数据 */
 const TOOL_TEXT: Record<string, string> = {
   search_knowledge: '检索知识库',
-  list_venues: '查询会议空间列表',
-  check_room_availability: '查询会议室类型与剩余会议室余量',
+  list_venues: '查询会议空间',
+  check_meeting_room_availability: '查询会议室与剩余时段',
   list_my_reservations: '查询我的预约',
   list_pending_reservations: '查询待确认预约',
   system_statistics: '查询经营统计',
   reservation_rules: '查询预约规则',
   prepare_reservation: '生成预约预览',
-  confirm_reservation: '确认下单',
+  confirm_reservation: '确认预约',
   cancel_reservation: '取消预约草稿',
 }
 
@@ -78,9 +78,9 @@ function toolsText(tools?: string): string {
 
 function actionStatusText(status?: string): string {
   if (status === 'pending') return '待确认'
-  if (status === 'confirmed') return '已下单'
+  if (status === 'confirmed') return '已预约'
   if (status === 'canceled') return '已取消'
-  if (status === 'failed') return '下单失败'
+  if (status === 'failed') return '预约失败'
   return '信息不完整'
 }
 
@@ -127,28 +127,29 @@ function ActionCard({ action, loading, onConfirm, onCancel }: ActionCardProps) {
       </div>
 
       <div className="agent-action-row">
-        <span className="agent-action-label">会议空间</span>
+        <span className="agent-action-label">空间</span>
         <span>{payload.venue_name || '待确认'}</span>
       </div>
       <div className="agent-action-row">
-        <span className="agent-action-label">会议室类型</span>
+        <span className="agent-action-label">会议室</span>
         <span>{payload.meeting_room_name || '待确认'}</span>
       </div>
       <div className="agent-action-row">
-        <span className="agent-action-label">使用开始</span>
-        <span>{payload.start_at || '待确认'}</span>
+        <span className="agent-action-label">开始</span>
+        <span>{payload.start_at?.replace('T', ' ').slice(0, 16) || '待确认'}</span>
       </div>
       <div className="agent-action-row">
-        <span className="agent-action-label">使用结束</span>
+        <span className="agent-action-label">结束</span>
         <span>
-          {payload.end_at || '待确认'}
-          {payload.hours ? `（${payload.hours} 晚）` : ''}
+          {payload.end_at?.replace('T', ' ').slice(0, 16) || '待确认'}
+          {payload.hours ? `（${payload.hours} 小时）` : ''}
         </span>
       </div>
       <div className="agent-action-row">
-        <span className="agent-action-label">房间</span>
+        <span className="agent-action-label">规模</span>
         <span>
-          {payload.rooms ? `${payload.rooms} 间` : '待确认'} / {payload.attendees ? `${payload.attendees} 人` : '待确认'}
+          {payload.rooms ? `${payload.rooms} 间` : '待确认'} /{' '}
+          {payload.attendees ? `${payload.attendees} 人` : '待确认'}
         </span>
       </div>
       <div className="agent-action-row">
@@ -156,7 +157,7 @@ function ActionCard({ action, loading, onConfirm, onCancel }: ActionCardProps) {
         <span>{payload.total_amount ? `¥${payload.total_amount}` : '待确认'}</span>
       </div>
       <div className="agent-action-row">
-        <span className="agent-action-label">特殊要求</span>
+        <span className="agent-action-label">设备需求</span>
         <span>{payload.equipment_request || '无'}</span>
       </div>
 
@@ -173,7 +174,7 @@ function ActionCard({ action, loading, onConfirm, onCancel }: ActionCardProps) {
       {action.status === 'pending' && problems.length === 0 ? (
         <div className="agent-action-buttons">
           <Button type="primary" size="small" loading={loading} onClick={onConfirm}>
-            确认下单
+            确认预约
           </Button>
           <Button size="small" disabled={loading} onClick={onCancel}>
             不用了
@@ -184,7 +185,7 @@ function ActionCard({ action, loading, onConfirm, onCancel }: ActionCardProps) {
           已生成预约 #{action.reservation_id}，可在「我的预约」中查看。
         </div>
       ) : problems.length > 0 ? (
-        <div className="agent-action-note">请补充或修改上述信息后重新告诉我要怎么订。</div>
+        <div className="agent-action-note">请补充或修改上述信息后重新告诉我要怎么预约。</div>
       ) : null}
     </div>
   )
@@ -438,9 +439,9 @@ export default function AgentChat() {
         <div className="agent-body" ref={listRef}>
           {!items.length && (
             <div className="agent-welcome">
-              <div className="agent-welcome-title">你好，我是会议室预约系统助手</div>
+              <div className="agent-welcome-title">你好，我是会议室预约助手</div>
               <div className="agent-welcome-desc">
-                可以问我预约流程、会议空间空闲情况、预约状态、会议室类型使用等问题。
+                可以问我会议空间、时段余量、设备、预约流程和预约状态。
               </div>
               <div className="agent-chips">
                 {faq.map((item) => (

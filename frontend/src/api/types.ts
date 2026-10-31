@@ -70,7 +70,7 @@ export interface Venue {
   name: string
   city: string
   address: string
-  star: number
+  rating: number
   room_count: number
   open_time: string
   close_time: string
@@ -85,7 +85,7 @@ export interface VenuePayload {
   name: string
   city: string
   address: string
-  star: number
+  rating: number
   room_count: number
   open_time: string
   close_time: string
@@ -100,9 +100,10 @@ export interface MeetingRoom {
   layout: string
   venue_id: number
   venue_name: string
-  price: number
+  hourly_price: number
   capacity: number
   quantity: number
+  equipment: string
   status: MeetingRoomStatus
   description: string
   created_at?: string | null
@@ -113,32 +114,34 @@ export interface MeetingRoomPayload {
   code: string
   layout: string
   venue_id: number
-  price: number
+  hourly_price: number
   capacity: number
   quantity: number
+  equipment: string
   status: MeetingRoomStatus
   description: string
 }
 
-/** 会议室状态查询返回的单个会议室类型（带实时剩余会议室余量） */
+/** 可用性查询返回的会议室规格（带实时剩余数量） */
 export interface AvailabilityMeetingRoom {
   id: number
   name: string
   layout: string
-  price: number
+  hourly_price: number
   capacity: number
   quantity: number
   remaining: number
+  equipment: string
   status: MeetingRoomStatus
   status_text: string
-  bookable: boolean
+  available: boolean
 }
 
 export interface Availability {
   venue_id: number
   venue_name: string
-  check_in: string
-  check_out: string
+  start_at: string
+  end_at: string
   hours: number
   open_time: string
   close_time: string
@@ -198,8 +201,8 @@ export interface StatOverview {
   user_total: number
   reservation_total: number
   pending_total: number
-  today_check_in_total: number
-  occupancy_rate: number
+  today_reservation_total: number
+  utilization_rate: number
   week_total: number
   week_start: string
   week_end: string

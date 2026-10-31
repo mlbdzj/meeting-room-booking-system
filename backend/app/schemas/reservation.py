@@ -6,8 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 class ReservationIn(BaseModel):
     venue_id: int = Field(ge=1)
     meeting_room_id: int = Field(ge=1)
-    start_at: date
-    end_at: date
+    start_at: datetime
+    end_at: datetime
     rooms: int = Field(default=1, ge=1, le=20)
     attendees: int = Field(default=1, ge=1, le=100)
     contact_phone: str = Field(default="", max_length=20)
@@ -16,7 +16,7 @@ class ReservationIn(BaseModel):
     @model_validator(mode="after")
     def check_dates(self):
         if self.end_at <= self.start_at:
-            raise ValueError("使用结束日期必须晚于使用开始日期")
+            raise ValueError("结束时间必须晚于开始时间")
         return self
 
 
@@ -36,9 +36,9 @@ class ReservationOut(BaseModel):
     user_id: int
     username: str = ""
     user_name: str = ""
-    start_at: date
-    end_at: date
-    hours: int
+    start_at: datetime
+    end_at: datetime
+    hours: float
     rooms: int
     attendees: int
     contact_phone: str = ""
@@ -58,8 +58,8 @@ class StatOverview(BaseModel):
     user_total: int
     reservation_total: int
     pending_total: int
-    today_check_in_total: int
-    occupancy_rate: int
+    today_reservation_total: int
+    utilization_rate: int
     week_total: int
     week_start: date
     week_end: date

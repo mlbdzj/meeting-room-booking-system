@@ -42,18 +42,21 @@ export const authApi = {
 export const venueApi = {
   list: (params?: Record<string, unknown>) => http.get<PageResult<Venue>>('/venues', params),
   detail: (id: number) => http.get<Venue>(`/venues/${id}`),
-  availability: (id: number, checkIn: string, checkOut: string) =>
-    http.get<Availability>(`/venues/${id}/availability`, { check_in: checkIn, check_out: checkOut }),
+  availability: (id: number, startAt: string, endAt: string) =>
+    http.get<Availability>(`/venues/${id}/availability`, { start_at: startAt, end_at: endAt }),
   create: (data: VenuePayload) => http.post<Venue>('/venues', data),
   update: (id: number, data: VenuePayload) => http.put<Venue>(`/venues/${id}`, data),
   remove: (id: number) => http.delete<MessageResult>(`/venues/${id}`),
 }
 
-export const roomTypeApi = {
-  page: (params?: Record<string, unknown>) => http.get<PageResult<MeetingRoom>>('/meeting-rooms', params),
-  all: (params?: Record<string, unknown>) => http.get<MeetingRoom[]>('/meeting-rooms/all', params),
+export const meetingRoomApi = {
+  page: (params?: Record<string, unknown>) =>
+    http.get<PageResult<MeetingRoom>>('/meeting-rooms', params),
+  all: (params?: Record<string, unknown>) =>
+    http.get<MeetingRoom[]>('/meeting-rooms/all', params),
   create: (data: MeetingRoomPayload) => http.post<MeetingRoom>('/meeting-rooms', data),
-  update: (id: number, data: MeetingRoomPayload) => http.put<MeetingRoom>(`/meeting-rooms/${id}`, data),
+  update: (id: number, data: MeetingRoomPayload) =>
+    http.put<MeetingRoom>(`/meeting-rooms/${id}`, data),
   remove: (id: number) => http.delete<MessageResult>(`/meeting-rooms/${id}`),
 }
 
@@ -67,10 +70,13 @@ export const userApi = {
 }
 
 export const reservationApi = {
-  my: (params?: Record<string, unknown>) => http.get<PageResult<Reservation>>('/reservations/my', params),
-  page: (params?: Record<string, unknown>) => http.get<PageResult<Reservation>>('/reservations', params),
+  my: (params?: Record<string, unknown>) =>
+    http.get<PageResult<Reservation>>('/reservations/my', params),
+  page: (params?: Record<string, unknown>) =>
+    http.get<PageResult<Reservation>>('/reservations', params),
   create: (data: ReservationPayload) => http.post<Reservation>('/reservations', data),
-  review: (id: number, data: ReservationReviewPayload) => http.post<Reservation>(`/reservations/${id}/review`, data),
+  review: (id: number, data: ReservationReviewPayload) =>
+    http.post<Reservation>(`/reservations/${id}/review`, data),
   cancel: (id: number) => http.post<Reservation>(`/reservations/${id}/cancel`),
   remove: (id: number) => http.delete<MessageResult>(`/reservations/${id}`),
 }

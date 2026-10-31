@@ -1,171 +1,164 @@
-"""初始化数据库表结构与演示数据。"""
+"""初始化会议室预约系统的表结构与演示数据。"""
 
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 
-from sqlalchemy import func, select, text
+from sqlalchemy import func, inspect, select, text
 
 from app.core.config import settings
 from app.core.security import hash_password
 from app.db.session import Base, SessionLocal, engine
-from app.models import Reservation, Venue, Knowledge, MeetingRoom, User
+from app.models import Knowledge, MeetingRoom, Reservation, User, Venue
 
 logger = logging.getLogger("meeting-room-agent")
 
-
 VENUE_SEEDS = [
     {
-        "name": "杭州西湖智选假日会议空间",
+        "name": "杭州西湖商务中心",
         "city": "杭州",
         "address": "西湖区文三路 88 号",
-        "star": 5,
-        "room_count": 180,
-        "open_time": "14:00",
-        "close_time": "12:00",
-        "description": "步行 10 分钟可达西湖景区，含自助早餐与健身房，适合商务与亲子出行。",
+        "rating": 5,
+        "room_count": 12,
+        "open_time": "08:30",
+        "close_time": "20:00",
+        "description": "近地铁与西湖景区，提供接待区、打印服务和视频会议支持。",
     },
     {
         "name": "上海外滩云舍会议空间",
         "city": "上海",
         "address": "黄浦区中山东一路 12 号",
-        "star": 4,
-        "room_count": 120,
-        "open_time": "15:00",
-        "close_time": "12:00",
-        "description": "坐落外滩核心地段，会议室可观浦江夜景，配备行政酒廊与会议厅。",
+        "rating": 4,
+        "room_count": 9,
+        "open_time": "09:00",
+        "close_time": "19:00",
+        "description": "位于外滩核心区，适合商务洽谈、客户演示和中小型培训。",
     },
     {
-        "name": "成都宽窄巷子花园会议空间",
+        "name": "成都宽窄巷子共享会议室",
         "city": "成都",
         "address": "青羊区长顺上街 66 号",
-        "star": 4,
-        "room_count": 96,
-        "open_time": "14:00",
-        "close_time": "12:00",
-        "description": "紧邻宽窄巷子，庭院式设计，提供川式早餐与茶室。",
+        "rating": 4,
+        "room_count": 8,
+        "open_time": "09:00",
+        "close_time": "18:00",
+        "description": "庭院式共享办公空间，支持茶歇、白板讨论和团队工作坊。",
     },
     {
-        "name": "三亚亚龙湾海景度假会议空间",
-        "city": "三亚",
-        "address": "亚龙湾国家旅游度假区",
-        "star": 5,
-        "room_count": 260,
-        "open_time": "15:00",
-        "close_time": "12:00",
-        "description": "私属沙滩与无边泳池，含亲子俱乐部与海景餐厅，适合度假长住。",
+        "name": "深圳湾创新中心",
+        "city": "深圳",
+        "address": "南山区科苑南路 20 号",
+        "rating": 5,
+        "room_count": 16,
+        "open_time": "08:00",
+        "close_time": "21:00",
+        "description": "面向科技团队的会议中心，配备直播、投屏和远程协作设备。",
     },
 ]
 
-# (会议空间名, 会议室类型名, 编号, 床型, 价格/晚, 可住人数, 会议室余量, 状态, 描述)
+# (空间名, 会议室名, 编号, 布局, 时租价, 容纳人数, 数量, 设备, 状态, 描述)
 MEETING_ROOM_SEEDS = [
-    ("杭州西湖智选假日会议空间", "高级大床房", "RT-HZ-001", "1.8m 大床", 458, 2, 40, "open", "含双早，可免费使用健身房。"),
-    ("杭州西湖智选假日会议空间", "高级双床房", "RT-HZ-002", "1.2m 双床", 498, 2, 35, "open", "适合双人同住，房间面积 32㎡。"),
-    ("杭州西湖智选假日会议空间", "湖景套房", "RT-HZ-003", "1.8m 大床", 988, 3, 12, "open", "独立客厅，可加床，含行政酒廊礼遇。"),
-    ("上海外滩云舍会议空间", "城市景观大床房", "RT-SH-001", "1.8m 大床", 688, 2, 30, "open", "高层城市景观，28㎡，含双早。"),
-    ("上海外滩云舍会议空间", "江景双床房", "RT-SH-002", "1.2m 双床", 788, 2, 24, "open", "可看浦江夜景，含双早。"),
-    ("上海外滩云舍会议空间", "外滩套房", "RT-SH-003", "1.8m 大床", 1688, 3, 8, "maintenance", "套房维护中，暂不接受预约。"),
-    ("成都宽窄巷子花园会议空间", "花园大床房", "RT-CD-001", "1.8m 大床", 398, 2, 28, "open", "庭院景观，含川式早餐。"),
-    ("成都宽窄巷子花园会议空间", "家庭房", "RT-CD-002", "1.5m 双床 + 加床", 568, 4, 16, "open", "适合一家四口，含四早。"),
-    ("三亚亚龙湾海景度假会议空间", "海景大床房", "RT-SY-001", "1.8m 大床", 1088, 2, 60, "open", "正面海景，含双早与沙滩服务。"),
-    ("三亚亚龙湾海景度假会议空间", "海景双床房", "RT-SY-002", "1.35m 双床", 1188, 2, 50, "open", "海景阳台，含双早。"),
-    ("三亚亚龙湾海景度假会议空间", "泳池别墅", "RT-SY-003", "2m 大床", 2888, 4, 10, "closed", "别墅已停售，等待翻新。"),
+    ("杭州西湖商务中心", "西湖 A 会议室", "MR-HZ-001", "课桌式", 120, 12, 3, "投影、白板、视频会议", "open", "适合项目评审与小型培训。"),
+    ("杭州西湖商务中心", "西湖 B 会议室", "MR-HZ-002", "U 型", 160, 20, 2, "双屏、无线投屏、白板", "open", "适合客户洽谈与团队讨论。"),
+    ("杭州西湖商务中心", "钱塘多功能厅", "MR-HZ-003", "剧院式", 320, 60, 1, "LED 屏、音响、直播", "open", "可分隔为两个独立讨论区。"),
+    ("上海外滩云舍会议空间", "外滩 1 号", "MR-SH-001", "董事会式", 260, 16, 2, "视频会议、电子白板", "open", "高层景观，适合客户演示。"),
+    ("上海外滩云舍会议空间", "外滩 2 号", "MR-SH-002", "岛式", 220, 24, 2, "投影、音响、直播", "open", "可灵活拆分小组讨论。"),
+    ("上海外滩云舍会议空间", "浦江路演厅", "MR-SH-003", "剧院式", 480, 80, 1, "LED 屏、舞台、直播", "maintenance", "路演厅设备升级中。"),
+    ("成都宽窄巷子共享会议室", "宽巷子 1 号", "MR-CD-001", "圆桌式", 98, 10, 3, "电视、白板、打印", "open", "自然采光，适合创意讨论。"),
+    ("成都宽窄巷子共享会议室", "窄巷子培训室", "MR-CD-002", "课桌式", 180, 30, 2, "投影、音响、白板", "open", "适合内部培训与工作坊。"),
+    ("深圳湾创新中心", "南山 A 会议室", "MR-SZ-001", "U 型", 180, 18, 4, "双屏、视频会议、白板", "open", "适合跨团队周会与面试。"),
+    ("深圳湾创新中心", "前海路演厅", "MR-SZ-002", "剧院式", 520, 100, 1, "LED 屏、舞台、直播、同传", "open", "支持百人发布活动。"),
+    ("深圳湾创新中心", "大鹏头脑风暴室", "MR-SZ-003", "岛式", 150, 16, 3, "移动屏、白板墙", "closed", "该房间正在改造，暂停预约。"),
 ]
 
 KNOWLEDGE_SEEDS = [
     {
         "category": "预约流程",
-        "question": "怎么预约会议空间房间？",
-        "answer": "进入「会议空间管理」页面选择空间，点击「立即预约」，在弹窗中选择使用开始日期、使用结束日期、会议室类型与间数，填写使用开始人数和特殊要求后点击「提交预约」。提交后状态为「待确认」，会议空间确认后预约生效。也可以直接告诉智能助手，例如「帮我订下周五使用开始两晚的杭州西湖智选假日会议空间大床房，2 个人」。",
-        "keywords": "预约,怎么订,订房,下单,订会议空间",
+        "question": "怎么预约会议室？",
+        "answer": "进入「空间管理」选择空间，点击「立即预约」，选择开始时间、结束时间、会议室、间数和参会人数后提交。提交后状态为「待确认」，管理员确认后预约生效。也可以直接告诉智能助手，例如「帮我订下周五上午10点到12点的西湖 A 会议室，10人」。",
+        "keywords": "预约,怎么约,订会议室,预约会议,下单",
     },
     {
         "category": "预约流程",
         "question": "在哪里查看我的预约？",
-        "answer": "点击左侧「我的预约」，可以按状态筛选查看全部预约，包含会议空间、会议室类型、使用开始使用结束日期、晚数、间数、总价与确认意见；待确认或已确认的预约可以在这里直接取消。",
+        "answer": "点击左侧「我的预约」，可以按状态查看空间、会议室、起止时间、时长、总价和确认意见。待确认或已确认的预约可直接取消。",
         "keywords": "我的预约,预约记录,查看预约,预约状态",
     },
     {
         "category": "预约流程",
-        "question": "使用开始和使用结束时间是什么时候？",
-        "answer": "使用开始时间通常为 14:00 之后，使用结束时间为次日 12:00 之前；部分空间（如上海外滩云舍会议空间、三亚亚龙湾海景度假会议空间）使用开始时间为 15:00。具体以预约卡片和会议空间详情中的说明为准，如需提前使用开始或延迟使用结束可联系前台。",
-        "keywords": "使用开始时间,使用结束时间,几点使用开始,几点使用结束",
+        "question": "空间开放时间是几点？",
+        "answer": "不同空间开放时间不同，杭州西湖商务中心为 08:30-20:00，上海为 09:00-19:00，成都为 09:00-18:00，深圳为 08:00-21:00。预约起止时间必须处于所选空间的开放时段内。",
+        "keywords": "开放时间,营业时间,几点开门,几点关门",
     },
     {
         "category": "预约流程",
         "question": "预约提交后多久会被确认？",
-        "answer": "系统没有自动确认，需要会议空间工作人员在「预约确认」页面处理。通常在提交后当天完成确认，建议至少提前 1 天预约；临近使用开始的预约会优先处理。",
+        "answer": "系统不会自动确认，需要空间管理员在「预约审核」页面处理。建议至少提前一天预约，临近开始时间的预约会优先处理。",
         "keywords": "多久确认,确认时间,什么时候确认",
     },
     {
         "category": "预约流程",
         "question": "怎么取消预约？",
-        "answer": "在「我的预约」页面找到状态为「待确认」或「已确认」的预约，点击「取消预约」并确认即可；也可以让智能助手帮你取消。已拒绝、已取消、已完成的预约无法再操作。",
-        "keywords": "取消预约,退订,取消预约,不去了",
+        "answer": "在「我的预约」找到状态为「待确认」或「已确认」的预约，点击「取消预约」并确认。已拒绝、已取消、已完成的预约不能再次操作。",
+        "keywords": "取消预约,退订,取消会议,不去了",
     },
     {
         "category": "预约流程",
         "question": "预约被拒绝了怎么办？",
-        "answer": "在「我的预约」页面的「确认意见」列可以看到拒绝原因（例如会议室余量不足、特殊要求无法满足）。根据原因调整日期、会议室类型或间数后重新下单即可；如有疑问可联系会议空间前台。",
+        "answer": "可以在「确认意见」中查看拒绝原因，例如时段冲突、参会人数超出容量或设备不可用。调整时间、会议室或人数后重新预约即可。",
         "keywords": "拒绝,被拒,预约被拒,确认意见",
     },
     {
-        "category": "会议室类型与会议室余量",
-        "question": "会议室类型的会议室余量和剩余会议室余量怎么看？",
-        "answer": "每个会议室类型都有固定会议室余量（库存间数）。在会议空间详情与预约弹窗中，可以看到所选日期内的剩余会议室余量；系统按下单日期的区间统计占用间数，剩余会议室余量不足时无法下单，避免超卖。",
-        "keywords": "会议室余量,剩余房,库存,还有房吗,满房",
+        "category": "会议室与容量",
+        "question": "会议室剩余数量怎么看？",
+        "answer": "在预约弹窗中选择空间和起止时间后，会实时显示每种会议室的剩余数量。待确认与已确认预约都会占用库存，时段重叠时不会重复分配。",
+        "keywords": "剩余会议室,库存,还有会议室吗,满房,时段冲突",
     },
     {
-        "category": "会议室类型与会议室余量",
-        "question": "一间房可以住几个人？",
-        "answer": "以会议室类型的「可住人数」为准：常见大床房/双床房可住 2 人，家庭房可住 4 人，套房可住 3 人。使用开始人数不能超过「可住人数 × 间数」，人数较多时建议加订房间。",
-        "keywords": "几个人,能住几人,加人,超员",
+        "category": "会议室与容量",
+        "question": "一个会议室能坐多少人？",
+        "answer": "以会议室的「容纳人数」为准。参会人数不能超过「单间容量 × 预约间数」。人数较多时，可以增加会议室数量或选择多功能厅。",
+        "keywords": "容纳人数,坐几个人,参会人数,超出容量",
     },
     {
-        "category": "会议室类型与会议室余量",
-        "question": "房价是怎么计算的？",
-        "answer": "总价 = 会议室类型单价（每晚）× 使用开始晚数 × 间数。下单时系统会自动计算并在预约卡片上显示总价，例如 458 元/晚的高级大床房，住 2 晚 1 间，总价为 916 元。",
-        "keywords": "价格,房价,多少钱,总价,计算",
+        "category": "会议室与容量",
+        "question": "预约费用怎么计算？",
+        "answer": "总价 = 会议室时租价 × 预约小时数 × 间数。系统按分钟精确计算时长，例如 2.5 小时会按 2.5 小时计费，提交前会展示预估总价。",
+        "keywords": "价格,费用,多少钱,时租,总价,计算",
     },
     {
-        "category": "会议室类型与会议室余量",
-        "question": "可以加床吗？",
-        "answer": "部分会议室类型支持加床（例如杭州西湖智选假日会议空间的湖景套房），加床会占用可住人数上限，并可能产生额外费用。下单时请在「特殊要求」中注明「需要加床」，由会议空间确认后生效。",
-        "keywords": "加床,加人,婴儿床",
+        "category": "会议室与容量",
+        "question": "可以预约多间会议室吗？",
+        "answer": "可以。同一会议室规格剩余数量足够时，可在预约表单中填写间数。拆分会、分组讨论等场景也可以分两次提交不同会议室的预约。",
+        "keywords": "多间会议室,两间,分组,拆分会议",
     },
     {
-        "category": "支付与发票",
-        "question": "需要先付押金吗？",
-        "answer": "系统当前只做预约登记，不在线收款。到店后按会议空间规定支付房费与押金，使用结束时押金原路退还；企业协议客户可走月结，具体联系前台。",
-        "keywords": "押金,付款,支付,到店付",
+        "category": "设备和现场",
+        "question": "会议室有哪些设备？",
+        "answer": "会议室列表中会显示投影、白板、无线投屏、视频会议、音响和直播等设备。需要额外设备时，请在「设备需求」中说明，由管理员确认是否可提供。",
+        "keywords": "设备,投影,白板,视频会议,投屏,音响",
     },
     {
-        "category": "支付与发票",
-        "question": "可以开发票吗？",
-        "answer": "可以。使用结束时在前台提供开票信息（单位名称、税号）即可开具增值税普通发票或专用发票；需要提前开票的请在预约「特殊要求」中注明，由会议空间协助处理。",
-        "keywords": "发票,开票,报销,税号",
+        "category": "设备和现场",
+        "question": "可以提前到场布置吗？",
+        "answer": "请按预约开始时间使用会议室。如确需提前布置，请把所需的开始时间直接写进预约，并在设备需求中说明布置安排。",
+        "keywords": "提前到场,布置,彩排,准备",
     },
     {
-        "category": "使用开始须知",
-        "question": "可以带宠物使用开始吗？",
-        "answer": "除三亚亚龙湾海景度假会议空间的部分会议室类型外，多数空间暂不接待宠物。若需携带宠物，请先联系会议空间前台确认会议室类型与清洁费标准，并在预约特殊要求中注明。",
-        "keywords": "宠物,带狗,带猫,宠物友好",
+        "category": "设备和现场",
+        "question": "可以带茶歇或外卖吗？",
+        "answer": "不同空间规定不同。预约时请在「设备需求」中注明茶歇或餐饮安排，管理员会确认场地限制和清洁要求。",
+        "keywords": "茶歇,餐饮,外卖,饮料",
     },
     {
-        "category": "使用开始须知",
-        "question": "使用开始需要带什么证件？",
-        "answer": "使用开始时需出示本人有效身份证件（身份证/护照），一人一证；未携带证件无法办理使用开始。如需增加同住人，请在预约特殊要求中提前说明。",
-        "keywords": "证件,身份证,登记,使用开始材料",
-    },
-    {
-        "category": "使用开始须知",
-        "question": "可以提前使用开始或延迟使用结束吗？",
-        "answer": "视当日会议室状态而定。提前使用开始可能需要加收费用，延迟使用结束超过 18:00 通常按全天房费计算。请在预约特殊要求中注明，或提前联系会议空间前台确认。",
-        "keywords": "提前使用开始,延迟使用结束,加时,晚点使用结束",
+        "category": "设备和现场",
+        "question": "会议室支持远程参会吗？",
+        "answer": "带有视频会议设备的会议室支持远程参会；大型路演厅还可提供直播支持。请在设备需求中写明平台、连线方式和人流规模。",
+        "keywords": "远程,视频会议,线上会议,直播,腾讯会议",
     },
     {
         "category": "账号问题",
         "question": "怎么修改个人信息或登录密码？",
-        "answer": "点击右上角头像，选择「个人信息」可以修改姓名、手机号和邮箱；选择「修改密码」可以修改登录密码，需要先输入原密码，修改成功后系统会自动退出登录。",
+        "answer": "点击右上角头像，选择「个人信息」修改姓名、手机号和邮箱；选择「修改密码」可更新登录密码，修改成功后会自动退出登录。",
         "keywords": "修改密码,个人信息,改资料,账号设置",
     },
     {
@@ -176,21 +169,27 @@ KNOWLEDGE_SEEDS = [
     },
     {
         "category": "管理员指南",
-        "question": "空间管理员如何确认预约？",
-        "answer": "管理员登录后进入「预约确认」页面，可按状态、会议空间、使用开始日期和会员筛选预约。对待确认的预约点击「确认」或「拒绝」，可填写确认意见；确认时系统会再次校验该会议室类型的剩余会议室余量，避免超卖。",
-        "keywords": "确认预约,预约确认,管理员确认,拒绝预约",
+        "question": "空间管理员如何审核预约？",
+        "answer": "进入「预约审核」页面，可以按状态、空间、开始日期和会员筛选。对待确认预约确认或拒绝并可填写意见；确认时系统会再次校验容量、开放时间和剩余会议室。",
+        "keywords": "审核预约,确认预约,拒绝预约,管理员确认",
     },
     {
         "category": "管理员指南",
         "question": "管理员可以维护哪些基础数据？",
-        "answer": "管理员可以维护三类数据：1）「会议空间管理」新增、编辑、删除空间（城市、地址、星级、会议室数、使用开始使用结束时间、营业状态）；2）「会议室类型管理」维护会议室类型（床型、价格、可住人数、会议室余量、状态）；3）「会员管理」新增会员、修改角色与状态、重置密码。删除会议空间前需先删除其会议室类型，存在预约的会议空间或会议室类型不能删除。",
-        "keywords": "管理员,维护,新增会议空间,新增会议室类型,会员管理",
+        "answer": "管理员可维护空间（城市、地址、开放时段、状态）、会议室（布局、时租价、容量、数量、设备和状态）以及会员账号。已有预约的空间或会议室不可直接删除。",
+        "keywords": "管理员,维护,新增空间,新增会议室,会员管理",
     },
     {
         "category": "系统说明",
         "question": "首页看板统计了什么？",
-        "answer": "首页展示空间数、会议室类型数、会员数（仅管理员）、待确认预约、今日使用开始预约、今日使用开始率，以及按本周使用开始预约数排名的空间排行和最近预约。普通用户看到的预约统计仅包含自己的预约。",
-        "keywords": "看板,统计,使用开始率,首页数据,多少条",
+        "answer": "首页展示空间数、会议室规格数、会员数、待确认预约、我的或全部预约数量、今日预约，以及本周空间预约排行和最近预约。普通会员只统计自己的数据。",
+        "keywords": "看板,统计,使用率,首页数据",
+    },
+    {
+        "category": "系统说明",
+        "question": "智能助手能做什么？",
+        "answer": "助手可以查询空间和会议室、检查某时段余量、查看预约、查询规则并生成自然语言预约草稿。只有点击草稿上的「确认预约」后才会写入系统，助手不能绕过容量与时段校验。",
+        "keywords": "智能助手,Agent,机器人,自然语言,预约会议",
     },
 ]
 
@@ -200,19 +199,18 @@ def create_tables() -> None:
 
 
 def ensure_schema_updates() -> None:
-    """为已存在的旧表补充后续新增的字段（幂等，可重复执行）。"""
+    """为对话表补充历史操作卡片字段（幂等）。"""
     additions = [
         ("chat_message", "action", "ALTER TABLE chat_message ADD COLUMN action TEXT NULL"),
     ]
+    inspector = inspect(engine)
     with engine.begin() as connection:
         for table, column, statement in additions:
-            exists = connection.execute(
-                text(
-                    "SELECT COUNT(*) FROM information_schema.columns "
-                    "WHERE table_schema = DATABASE() AND table_name = :table AND column_name = :column"
-                ),
-                {"table": table, "column": column},
-            ).scalar()
+            columns = {
+                item["name"]
+                for item in inspector.get_columns(table)
+            }
+            exists = column in columns
             if not exists:
                 connection.execute(text(statement))
                 logger.info("已为表 %s 补充字段 %s", table, column)
@@ -228,7 +226,7 @@ def seed_data() -> None:
                         password_hash=hash_password(settings.DEFAULT_ADMIN_PASSWORD),
                         name="空间管理员",
                         phone="13800000000",
-                        email="admin@venue.local",
+                        email="admin@meeting-room.local",
                         role="admin",
                         status=1,
                     ),
@@ -237,19 +235,18 @@ def seed_data() -> None:
                         password_hash=hash_password(settings.DEFAULT_USER_PASSWORD),
                         name="张先生",
                         phone="13900000001",
-                        email="guest@venue.local",
+                        email="member@meeting-room.local",
                         role="user",
                         status=1,
                     ),
                 ]
             )
             db.commit()
-            logger.info("已初始化默认账号：%s / %s", settings.DEFAULT_ADMIN_USERNAME, settings.DEFAULT_USER_USERNAME)
 
         if not db.scalar(select(func.count(Venue.id))):
             db.add_all([Venue(**seed) for seed in VENUE_SEEDS])
             db.commit()
-            logger.info("已初始化 %s 家会议空间", len(VENUE_SEEDS))
+            logger.info("已初始化 %s 个会议空间", len(VENUE_SEEDS))
 
         if not db.scalar(select(func.count(MeetingRoom.id))):
             venue_map = {venue.name: venue.id for venue in db.scalars(select(Venue)).all()}
@@ -260,38 +257,65 @@ def seed_data() -> None:
                         name=name,
                         code=code,
                         layout=layout,
-                        price=price,
+                        hourly_price=price,
                         capacity=capacity,
                         quantity=quantity,
+                        equipment=equipment,
                         status=room_status,
                         description=description,
                     )
-                    for venue_name, name, code, layout, price, capacity, quantity, room_status, description in MEETING_ROOM_SEEDS
+                    for (
+                        venue_name,
+                        name,
+                        code,
+                        layout,
+                        price,
+                        capacity,
+                        quantity,
+                        equipment,
+                        room_status,
+                        description,
+                    ) in MEETING_ROOM_SEEDS
                 ]
             )
             db.commit()
-            logger.info("已初始化 %s 个会议室类型", len(MEETING_ROOM_SEEDS))
+            logger.info("已初始化 %s 个会议室规格", len(MEETING_ROOM_SEEDS))
 
         if not db.scalar(select(func.count(Reservation.id))):
             venue_map = {venue.name: venue.id for venue in db.scalars(select(Venue)).all()}
-            room_map = {room.name: room for room in db.scalars(select(MeetingRoom)).all()}
-            guest = db.scalar(select(User).where(User.role == "user"))
+            room_map = {
+                room.name: room for room in db.scalars(select(MeetingRoom)).all()
+            }
+            member = db.scalar(select(User).where(User.role == "user"))
             admin = db.scalar(select(User).where(User.role == "admin"))
             today = date.today()
 
-            def make_reservation(venue_name, room_name, check_in, hours, rooms, attendees, status, remark="", special=""):
+            def make_reservation(
+                venue_name: str,
+                room_name: str,
+                start_date: date,
+                start_time: time,
+                hours: float,
+                rooms: int,
+                attendees: int,
+                status: str,
+                remark: str = "",
+                equipment: str = "",
+            ) -> Reservation:
                 room = room_map[room_name]
+                start_at = datetime.combine(start_date, start_time)
+                end_at = start_at + timedelta(hours=hours)
                 return Reservation(
                     venue_id=venue_map[venue_name],
                     meeting_room_id=room.id,
-                    user_id=guest.id,
-                    start_at=check_in,
-                    end_at=check_in + timedelta(days=hours),
+                    user_id=member.id,
+                    start_at=start_at,
+                    end_at=end_at,
                     hours=hours,
                     rooms=rooms,
                     attendees=attendees,
-                    total_amount=float(room.price) * hours * rooms,
-                    equipment_request=special,
+                    total_amount=float(room.hourly_price) * hours * rooms,
+                    equipment_request=equipment,
                     status=status,
                     remark=remark,
                     reviewer_id=admin.id if status in {"confirmed", "rejected"} else None,
@@ -299,10 +323,51 @@ def seed_data() -> None:
 
             db.add_all(
                 [
-                    make_reservation("杭州西湖智选假日会议空间", "高级大床房", today + timedelta(days=1), 2, 1, 2, "pending", special="希望安排安静楼层"),
-                    make_reservation("上海外滩云舍会议空间", "江景双床房", today + timedelta(days=3), 1, 1, 2, "confirmed", remark="已为您保留江景房，祝使用开始愉快"),
-                    make_reservation("成都宽窄巷子花园会议空间", "花园大床房", today - timedelta(days=5), 2, 1, 2, "completed", remark="已完成使用开始"),
-                    make_reservation("三亚亚龙湾海景度假会议空间", "海景双床房", today + timedelta(days=10), 3, 2, 4, "rejected", remark="该日期房源紧张，建议改期", special="需要两间相邻房间"),
+                    make_reservation(
+                        "杭州西湖商务中心",
+                        "西湖 A 会议室",
+                        today + timedelta(days=1),
+                        time(10, 0),
+                        2,
+                        1,
+                        10,
+                        "pending",
+                        equipment="需要视频会议",
+                    ),
+                    make_reservation(
+                        "上海外滩云舍会议空间",
+                        "外滩 1 号",
+                        today + timedelta(days=3),
+                        time(14, 0),
+                        3,
+                        1,
+                        12,
+                        "confirmed",
+                        remark="已为您保留会议室并完成设备调试",
+                    ),
+                    make_reservation(
+                        "成都宽窄巷子共享会议室",
+                        "宽巷子 1 号",
+                        today - timedelta(days=5),
+                        time(9, 30),
+                        2,
+                        1,
+                        8,
+                        "completed",
+                        remark="会议已完成",
+                    ),
+                    make_reservation(
+                        "深圳湾创新中心",
+                        "前海路演厅",
+                        today + timedelta(days=10),
+                        time(13, 0),
+                        4,
+                        1,
+                        80,
+                        "rejected",
+                        remark="该时段路演厅已有内部活动，建议改期",
+                        equipment="需要直播与同传",
+                    ),
                 ]
             )
             db.commit()

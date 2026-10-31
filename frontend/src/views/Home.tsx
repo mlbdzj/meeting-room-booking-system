@@ -2,17 +2,16 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button, Card, Col, Row, Table, Tag, theme, type TableColumnsType } from 'antd'
 import {
-  BankOutlined,
+  ApartmentOutlined,
   CalendarOutlined,
-  PayCircleOutlined,
-  StarOutlined,
+  ClockCircleOutlined,
   TeamOutlined,
 } from '@ant-design/icons'
 
 import { statsApi } from '@/api'
 import type { Reservation, StatOverview } from '@/api/types'
 import { RESERVATION_STATUS_COLOR, useUserStore } from '@/store/user'
-import { money, stayRange } from '@/utils/format'
+import { money, reservationRange } from '@/utils/format'
 
 const EMPTY_OVERVIEW: StatOverview = {
   venue_total: 0,
@@ -20,8 +19,8 @@ const EMPTY_OVERVIEW: StatOverview = {
   user_total: 0,
   reservation_total: 0,
   pending_total: 0,
-  today_check_in_total: 0,
-  occupancy_rate: 0,
+  today_reservation_total: 0,
+  utilization_rate: 0,
   week_total: 0,
   week_start: '',
   week_end: '',
@@ -82,40 +81,42 @@ export default function Home() {
 
   const cards = isAdmin
     ? [
-        { label: '空间数', value: overview.venue_total, icon: <BankOutlined />, tone: tones.blue, tip: '在营会议空间空间' },
-        { label: '会议室类型数', value: overview.meeting_room_total, icon: <StarOutlined />, tone: tones.green, tip: '可预约会议室类型数量' },
+        { label: '会议空间', value: overview.venue_total, icon: <ApartmentOutlined />, tone: tones.blue, tip: '可管理的会议空间' },
+        { label: '会议室规格', value: overview.meeting_room_total, icon: <ClockCircleOutlined />, tone: tones.green, tip: '可预约会议室类型' },
         { label: '会员数', value: overview.user_total, icon: <TeamOutlined />, tone: tones.gold, tip: '注册会员总数' },
-        { label: '待确认预约', value: overview.pending_total, icon: <CalendarOutlined />, tone: tones.red, tip: '等待确认的预约' },
+        { label: '待确认预约', value: overview.pending_total, icon: <CalendarOutlined />, tone: tones.red, tip: '等待审核的预约' },
       ]
     : [
-        { label: '空间数', value: overview.venue_total, icon: <BankOutlined />, tone: tones.blue, tip: '在营会议空间空间' },
-        { label: '会议室类型数', value: overview.meeting_room_total, icon: <StarOutlined />, tone: tones.green, tip: '可预约会议室类型数量' },
+        { label: '会议空间', value: overview.venue_total, icon: <ApartmentOutlined />, tone: tones.blue, tip: '可预约会议空间' },
+        { label: '会议室规格', value: overview.meeting_room_total, icon: <ClockCircleOutlined />, tone: tones.green, tip: '可预约会议室类型' },
         { label: '我的预约', value: overview.reservation_total, icon: <CalendarOutlined />, tone: tones.gold, tip: '累计预约数' },
-        { label: '今日使用开始', value: overview.today_check_in_total, icon: <PayCircleOutlined />, tone: tones.red, tip: '今天使用开始的预约' },
+        { label: '今日预约', value: overview.today_reservation_total, icon: <CalendarOutlined />, tone: tones.red, tip: '今天使用的会议室' },
       ]
 
   const columns: TableColumnsType<Reservation> = [
     {
-      title: '会议空间 / 会议室类型',
+      title: '空间 / 会议室',
       dataIndex: 'venue_name',
       width: 200,
       ellipsis: true,
       render: (_, row) => (
         <div>
           <div>{row.venue_name}</div>
-          <div style={{ color: token.colorTextTertiary, fontSize: 12 }}>{row.meeting_room_name}</div>
+          <div style={{ color: token.colorTextTertiary, fontSize: 12 }}>
+            {row.meeting_room_name}
+          </div>
         </div>
       ),
     },
-    ...(isAdmin
-      ? [{ title: '会员', dataIndex: 'user_name' as const, width: 90 }]
-      : []),
-    { title: '使用开始 / 使用结束', width: 200, render: (_, row) => stayRange(row) },
+    ...(isAdmin ? [{ title: '会员', dataIndex: 'user_name' as const, width: 90 }] : []),
+    { title: '预约时段', width: 235, render: (_, row) => reservationRange(row) },
     { title: '总价', width: 90, render: (_, row) => money(row.total_amount) },
     {
       title: '状态',
       width: 100,
-      render: (_, row) => <Tag color={RESERVATION_STATUS_COLOR[row.status]}>{row.status_text}</Tag>,
+      render: (_, row) => (
+        <Tag color={RESERVATION_STATUS_COLOR[row.status]}>{row.status_text}</Tag>
+      ),
     },
   ]
 
@@ -129,18 +130,26 @@ export default function Home() {
             </div>
             <div style={{ marginTop: 6, color: token.colorTextSecondary }}>
               {isAdmin
-                ? '这里是会议空间经营总览，您可以确认预约并维护会议空间与会议室类型。'
-                : '您可以预约会议空间、查看预约进度，也可以直接问客服助手。'}
+                ? '这里可以查看空间使用情况、审核预约并维护会议室资源。'
+                : '您可以查找会议空间、预约会议室，也可以直接问智能助手。'}
             </div>
           </div>
           <div className="page-toolbar">
-            <Button type="primary" icon={<BankOutlined />} onClick={() => navigate('/manager/venue')}>
-              预约会议空间
+            <Button
+              type="primary"
+              icon={<ApartmentOutlined />}
+              onClick={() => navigate('/manager/venue')}
+            >
+              预约会议室
             </Button>
             <Button onClick={() => navigate('/manager/reservation')}>我的预约</Button>
             {isAdmin && (
-              <Button color="gold" variant="solid" onClick={() => navigate('/manager/order-confirm')}>
-                预约确认
+              <Button
+                color="gold"
+                variant="solid"
+                onClick={() => navigate('/manager/reservation-review')}
+              >
+                预约审核
               </Button>
             )}
           </div>
@@ -172,7 +181,9 @@ export default function Home() {
                   <div style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.2 }}>{card.value}</div>
                 </div>
               </div>
-              <div style={{ marginTop: 12, color: token.colorTextTertiary, fontSize: 12 }}>{card.tip}</div>
+              <div style={{ marginTop: 12, color: token.colorTextTertiary, fontSize: 12 }}>
+                {card.tip}
+              </div>
             </Card>
           </Col>
         ))}
@@ -185,7 +196,11 @@ export default function Home() {
             loading={loading}
             style={{ marginBottom: 16 }}
             title="空间预约排行"
-            extra={<span style={{ fontSize: 12, color: token.colorTextTertiary }}>本周 {weekText}</span>}
+            extra={
+              <span style={{ fontSize: 12, color: token.colorTextTertiary }}>
+                本周 {weekText}
+              </span>
+            }
           >
             {overview.venue_ranking.length === 0 && (
               <div style={{ color: token.colorTextTertiary }}>暂无数据</div>
@@ -202,15 +217,20 @@ export default function Home() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ color: rankColor(index), fontWeight: 600, width: 16 }}>{index + 1}</span>
+                  <span style={{ color: rankColor(index), fontWeight: 600, width: 16 }}>
+                    {index + 1}
+                  </span>
                   <span>{item.venue_name}</span>
                 </div>
-                <span style={{ color: token.colorTextSecondary }}>{item.reservation_count} 单</span>
+                <span style={{ color: token.colorTextSecondary }}>
+                  {item.reservation_count} 次
+                </span>
               </div>
             ))}
             <div style={{ marginTop: 12, color: token.colorTextTertiary, fontSize: 12 }}>
-              今日使用开始率 <b style={{ color: token.colorPrimary }}>{overview.occupancy_rate}%</b>
-              （在住 {overview.occupancy_rate ? '中' : '—'}），排行按本周使用开始预约数统计，已取消 / 已拒绝不计入。
+              今日会议室使用率{' '}
+              <b style={{ color: token.colorPrimary }}>{overview.utilization_rate}%</b>
+              ，排行按本周有效预约数统计，已取消 / 已拒绝不计入。
             </div>
           </Card>
         </Col>

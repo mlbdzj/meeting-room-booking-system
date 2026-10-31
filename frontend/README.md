@@ -29,12 +29,12 @@ npm run typecheck    # 只做 TypeScript 类型检查
 ```
 src/
   api/         请求层与接口封装（request.ts 统一处理 Token、401 与错误文案）
-  components/  ReservationDialog（预约弹窗）、AgentChat（客服助手）、PageLoading
+  components/  ReservationDialog（预约弹窗）、AgentChat（智能助手）、PageLoading
   config/      侧边菜单配置（同时用于菜单渲染与页面标题）
   hooks/       useDocumentTitle 等通用 Hook
   layouts/     主框架（顶栏、角色化菜单、个人信息 / 修改密码、悬浮助手）
   router/      路由表与登录态 / 角色守卫
   store/       Zustand 登录态与角色、预约状态字典
   utils/       format（日期与金额格式化）、feedback（非组件代码里的 message / modal）
-  views/       登录、注册、首页概览、会议空间、会议室类型、会员、我的预约、预约确认、客服知识库
+  views/       登录、注册、首页概览、会议空间、会议室、会员、我的预约、预约审核、预约知识库
 ```

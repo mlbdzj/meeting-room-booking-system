@@ -18,13 +18,13 @@ export function weekdayText(value?: string | null): string {
   return `周${'日一二三四五六'[target.getDay()]}`
 }
 
-/** 「2026-09-25 至 2026-09-27（2 晚）」 */
-export function stayRange(row?: Pick<Reservation, 'start_at' | 'end_at' | 'hours'> | null): string {
+/** 「2026-11-06 10:00 至 12:00（2 小时）」 */
+export function reservationRange(
+  row?: Pick<Reservation, 'start_at' | 'end_at' | 'hours'> | null,
+): string {
   if (!row?.start_at) return ''
-  const hours = row.hours ?? ''
-  return `${toDateString(row.start_at)} 至 ${toDateString(row.end_at)}${
-    hours ? `（${hours} 晚）` : ''
-  }`
+  const duration = row.hours ? `（${row.hours} 小时）` : ''
+  return `${toDateTimeString(row.start_at)} 至 ${toDateTimeString(row.end_at)}${duration}`
 }
 
 export function money(value?: number | string | null): string {

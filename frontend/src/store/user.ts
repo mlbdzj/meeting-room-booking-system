@@ -77,7 +77,7 @@ export const RESERVATION_STATUS_COLOR: Record<ReservationStatus, string> = {
 export const MEETING_ROOM_STATUS_TEXT = {
   open: '可预约',
   maintenance: '维护中',
-  closed: '停售',
+  closed: '停用',
 } as const
 
 export const MEETING_ROOM_STATUS_COLOR = {

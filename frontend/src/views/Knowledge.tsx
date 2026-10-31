@@ -237,7 +237,7 @@ export default function Knowledge() {
             <Input.TextArea rows={6} maxLength={1000} showCount />
           </Form.Item>
           <Form.Item label="关键词" name="keywords">
-            <Input placeholder="用逗号分隔，例如：预约,怎么约,订会议空间" />
+            <Input placeholder="用逗号分隔，例如：预约,怎么约,订会议室" />
           </Form.Item>
           <Form.Item
             label="状态"

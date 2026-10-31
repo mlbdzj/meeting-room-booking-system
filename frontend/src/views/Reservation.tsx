@@ -7,11 +7,13 @@ import type { Reservation as ReservationRecord, Venue } from '@/api/types'
 import ReservationDialog from '@/components/ReservationDialog'
 import { RESERVATION_STATUS_COLOR, RESERVATION_STATUS_TEXT } from '@/store/user'
 import { feedback } from '@/utils/feedback'
-import { money, stayRange } from '@/utils/format'
+import { money, reservationRange } from '@/utils/format'
 
 const PAGE_SIZE = 10
-
-const STATUS_OPTIONS = Object.entries(RESERVATION_STATUS_TEXT).map(([value, label]) => ({ value, label }))
+const STATUS_OPTIONS = Object.entries(RESERVATION_STATUS_TEXT).map(([value, label]) => ({
+  value,
+  label,
+}))
 
 export default function Reservation() {
   const [loading, setLoading] = useState(false)
@@ -69,30 +71,34 @@ export default function Reservation() {
 
   const columns: TableColumnsType<ReservationRecord> = [
     {
-      title: '会议空间 / 会议室类型',
-      width: 190,
+      title: '空间 / 会议室',
+      width: 200,
       ellipsis: true,
       render: (_, row) => (
         <div>
           <div>{row.venue_name}</div>
-          <div style={{ color: token.colorTextTertiary, fontSize: 12 }}>{row.meeting_room_name}</div>
+          <div style={{ color: token.colorTextTertiary, fontSize: 12 }}>
+            {row.meeting_room_name}
+          </div>
         </div>
       ),
     },
-    { title: '使用开始 / 使用结束', width: 180, render: (_, row) => stayRange(row) },
+    { title: '预约时段', width: 235, render: (_, row) => reservationRange(row) },
     { title: '间数 / 人数', width: 110, render: (_, row) => `${row.rooms} 间 / ${row.attendees} 人` },
-    { title: '总价', width: 100, render: (_, row) => money(row.total_amount) },
+    { title: '总价', width: 90, render: (_, row) => money(row.total_amount) },
     {
-      title: '特殊要求',
+      title: '设备需求',
       dataIndex: 'equipment_request',
-      width: 140,
+      width: 150,
       ellipsis: true,
       render: (value: string) => value || '-',
     },
     {
       title: '状态',
       width: 100,
-      render: (_, row) => <Tag color={RESERVATION_STATUS_COLOR[row.status]}>{row.status_text}</Tag>,
+      render: (_, row) => (
+        <Tag color={RESERVATION_STATUS_COLOR[row.status]}>{row.status_text}</Tag>
+      ),
     },
     {
       title: '确认意见',
@@ -128,10 +134,13 @@ export default function Reservation() {
               allowClear
               style={{ width: 150 }}
               options={STATUS_OPTIONS}
-              onChange={(value) => setStatus(value ?? '')}
+              onChange={(value) => {
+                setStatus(value ?? '')
+                setPage(1)
+              }}
             />
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setDialogOpen(true)}>
-              预约会议空间
+              预约会议室
             </Button>
           </div>
         </div>
@@ -143,8 +152,8 @@ export default function Reservation() {
           loading={loading}
           columns={columns}
           dataSource={records}
-          scroll={{ x: 1080 }}
-          locale={{ emptyText: '暂无预约，去「会议空间管理」预约一间吧' }}
+          scroll={{ x: 1100 }}
+          locale={{ emptyText: '暂无预约，去「会议空间管理」选择一间会议室吧' }}
           pagination={{
             current: page,
             pageSize: PAGE_SIZE,

@@ -1,4 +1,4 @@
-from app.api.routers import agent, auth, reservations, venues, knowledge, meeting_rooms, stats, users
+from app.api.routers import agent, auth, knowledge, meeting_rooms, reservations, stats, users, venues
 
 __all__ = [
     "auth",

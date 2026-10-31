@@ -1,15 +1,4 @@
-"""pytest 公共夹具：默认跑在内存 SQLite 上，不依赖 MySQL 与外网。
-
-三个刻意的隔离设计：
-
-- ``INIT_DB_ON_STARTUP=false``：导入应用时不会连开发库、不会写入演示数据；
-- ``AGENT_PROVIDER=local``：助手强制走本地知识库引擎，测试不调用外部大模型，结果可复现；
-- 每个用例跑在自己的事务里并在结束时回滚，用例之间互不影响。
-
-如需对着真实 MySQL 跑，设置环境变量 ``TEST_DATABASE_URL`` 指向一个测试库即可
-（例如 ``mysql+pymysql://root:123456@127.0.0.1:3306/meeting_room_booking_test``）；
-夹具会自动建表与清理，请不要指向开发库。
-"""
+"""pytest 公共夹具：默认使用内存 SQLite，不依赖 MySQL 与外网。"""
 
 import os
 from types import SimpleNamespace
@@ -27,11 +16,10 @@ from sqlalchemy.pool import StaticPool
 from app.core.security import hash_password
 from app.db.session import Base, get_db
 from app.main import app
-from app.models import Venue, Knowledge, MeetingRoom, User
+from app.models import Knowledge, MeetingRoom, User, Venue
 
 TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL", "sqlite+pysqlite:///:memory:")
 TEST_PASSWORD = "123456"
-# PBKDF2 迭代 12 万次，只算一次，避免每个用例重复计算
 TEST_PASSWORD_HASH = hash_password(TEST_PASSWORD)
 
 
@@ -55,7 +43,6 @@ def engine():
 
 @pytest.fixture
 def db(engine):
-    """把会话绑在一条外层事务上，用例内部的 commit 只落在外层事务里。"""
     connection = engine.connect()
     transaction = connection.begin()
     session = Session(bind=connection, autoflush=False, expire_on_commit=False)
@@ -80,45 +67,106 @@ def client(db):
 
 @pytest.fixture
 def seed(db):
-    """最小演示数据：2 家会议空间、4 个会议室类型、3 个账号、1 条知识库。"""
+    """最小演示数据：2 个空间、4 个会议室规格、3 个账号、1 条知识库。"""
     admin = User(
-        username="admin", password_hash=TEST_PASSWORD_HASH, name="空间管理员", role="admin", status=1
+        username="admin",
+        password_hash=TEST_PASSWORD_HASH,
+        name="空间管理员",
+        role="admin",
+        status=1,
     )
     member = User(
-        username="student", password_hash=TEST_PASSWORD_HASH, name="张先生", role="user", status=1
+        username="student",
+        password_hash=TEST_PASSWORD_HASH,
+        name="张先生",
+        phone="13800000000",
+        role="user",
+        status=1,
     )
     stranger = User(
-        username="lisi", password_hash=TEST_PASSWORD_HASH, name="李四", role="user", status=1
+        username="lisi",
+        password_hash=TEST_PASSWORD_HASH,
+        name="李四",
+        role="user",
+        status=1,
     )
     db.add_all([admin, member, stranger])
     db.flush()
 
     venue = Venue(
-        name="杭州西湖智选假日会议空间", city="杭州", address="西湖区北山街 1 号", star=5, room_count=30, status=1
+        name="杭州西湖商务中心",
+        city="杭州",
+        address="西湖区文三路 88 号",
+        rating=5,
+        room_count=12,
+        open_time="08:30",
+        close_time="20:00",
+        status=1,
     )
-    closed_venue = Venue(name="停业会议空间", city="杭州", address="测试路 9 号", star=3, room_count=6, status=0)
+    closed_venue = Venue(
+        name="旧空间",
+        city="杭州",
+        address="测试路 9 号",
+        rating=3,
+        room_count=6,
+        open_time="09:00",
+        close_time="18:00",
+        status=0,
+    )
     db.add_all([venue, closed_venue])
     db.flush()
 
-    king = MeetingRoom(
-        venue_id=venue.id, name="高级大床房", layout="大床", price=458, capacity=2, quantity=3, status="open"
+    boardroom = MeetingRoom(
+        venue_id=venue.id,
+        name="西湖 A 会议室",
+        code="MR-HZ-001",
+        layout="课桌式",
+        hourly_price=120,
+        capacity=10,
+        quantity=3,
+        equipment="投影、白板、视频会议",
+        status="open",
     )
-    twin = MeetingRoom(
-        venue_id=venue.id, name="双床房", layout="双床", price=528, capacity=2, quantity=1, status="open"
+    small = MeetingRoom(
+        venue_id=venue.id,
+        name="西湖 B 会议室",
+        code="MR-HZ-002",
+        layout="U 型",
+        hourly_price=180,
+        capacity=2,
+        quantity=1,
+        equipment="双屏、无线投屏",
+        status="open",
     )
     maintenance = MeetingRoom(
-        venue_id=venue.id, name="维护中套房", layout="大床", price=888, capacity=2, quantity=2, status="maintenance"
+        venue_id=venue.id,
+        name="维护中路演厅",
+        code="MR-HZ-003",
+        layout="剧院式",
+        hourly_price=260,
+        capacity=30,
+        quantity=2,
+        equipment="LED 屏",
+        status="maintenance",
     )
     closed_room = MeetingRoom(
-        venue_id=closed_venue.id, name="停业会议室类型", layout="大床", price=300, capacity=2, quantity=2, status="open"
+        venue_id=closed_venue.id,
+        name="旧空间会议室",
+        code="MR-HZ-004",
+        layout="圆桌式",
+        hourly_price=100,
+        capacity=6,
+        quantity=2,
+        equipment="白板",
+        status="open",
     )
-    db.add_all([king, twin, maintenance, closed_room])
+    db.add_all([boardroom, small, maintenance, closed_room])
     db.add(
         Knowledge(
-            category="使用开始须知",
-            question="使用开始和使用结束时间是几点？",
-            answer="使用开始时间为 14:00 之后，使用结束时间为次日 12:00 之前。",
-            keywords="使用开始时间,使用结束时间,几点,什么时候",
+            category="预约规则",
+            question="会议空间开放时间是几点？",
+            answer="杭州西湖商务中心开放时间为 08:30-20:00，具体以空间详情为准。",
+            keywords="开放时间,营业时间,几点,什么时候",
             status=1,
         )
     )
@@ -130,8 +178,8 @@ def seed(db):
         stranger=stranger,
         venue=venue,
         closed_venue=closed_venue,
-        king=king,
-        twin=twin,
+        boardroom=boardroom,
+        small=small,
         maintenance=maintenance,
         closed_room=closed_room,
     )

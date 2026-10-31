@@ -106,7 +106,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'order-confirm',
+        path: 'reservation-review',
         element: (
           <Protected roles={['admin']}>
             <LazyView>

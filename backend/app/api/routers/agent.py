@@ -12,7 +12,7 @@ from app.agent.tools import TOOL_NAMES
 from app.api.deps import get_current_user
 from app.api.serializers import reservation_to_dict
 from app.db.session import get_db
-from app.models import Reservation, ChatMessage, ChatSession, Venue, Knowledge, MeetingRoom, User
+from app.models import ChatMessage, ChatSession, Knowledge, MeetingRoom, Reservation, User, Venue
 from app.schemas.agent import (
     AgentStatus,
     ChatActionIn,
@@ -166,7 +166,7 @@ def confirm_action(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """用户点击「确认下单」后真正创建预约。"""
+    """用户点击「确认预约」后真正创建预约。"""
     session = _get_session(db, payload.session_id, current_user)
     message = _get_message(db, payload.session_id, payload.message_id, current_user)
     action = _load_action(message)
@@ -200,13 +200,17 @@ def confirm_action(
     meeting_room = db.get(MeetingRoom, reservation.meeting_room_id)
     content = (
         f"预约已提交：{venue.name if venue else ''} {meeting_room.name if meeting_room else ''}，"
-        f"{reservation.start_at.isoformat()} 至 {reservation.end_at.isoformat()}"
-        f"（{reservation.hours} 晚，{reservation.rooms} 间 / {reservation.attendees} 人），"
+        f"{reservation.start_at:%Y-%m-%d %H:%M} 至 {reservation.end_at:%Y-%m-%d %H:%M}"
+        f"（{float(reservation.hours or 0):g} 小时，{reservation.rooms} 间 / {reservation.attendees} 人），"
         f"总价 ¥{float(reservation.total_amount or 0):.0f}，当前状态为「待确认」。\n"
         "可以在「我的预约」页面查看确认进度。"
     )
     reply = ChatMessage(
-        session_id=session.id, role="assistant", content=content, source="system", tools="confirm_reservation"
+        session_id=session.id,
+        role="assistant",
+        content=content,
+        source="system",
+        tools="confirm_reservation",
     )
     db.add(reply)
     session.updated_at = datetime.now()
@@ -217,7 +221,10 @@ def confirm_action(
         action=action,
         message=ChatMessageOut.model_validate(reply),
         reservation=reservation_to_dict(
-            reservation, venue.name if venue else "", meeting_room.name if meeting_room else "", current_user
+            reservation,
+            venue.name if venue else "",
+            meeting_room.name if meeting_room else "",
+            current_user,
         ),
     )
 
@@ -240,7 +247,7 @@ def cancel_action(
     reply = ChatMessage(
         session_id=session.id,
         role="assistant",
-        content="好的，这次预约没有提交。需要的话可以重新告诉我会议空间、使用开始日期和会议室类型。",
+        content="好的，这次预约没有提交。需要的话可以重新告诉我空间、日期时间和会议室。",
         source="system",
         tools="cancel_reservation",
     )
@@ -249,4 +256,6 @@ def cancel_action(
     db.commit()
     db.refresh(reply)
 
-    return ChatActionOut(action=action, message=ChatMessageOut.model_validate(reply), reservation=None)
+    return ChatActionOut(
+        action=action, message=ChatMessageOut.model_validate(reply), reservation=None
+    )

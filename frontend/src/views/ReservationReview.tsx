@@ -20,12 +20,14 @@ import { reservationApi, venueApi } from '@/api'
 import type { Reservation, Venue } from '@/api/types'
 import { RESERVATION_STATUS_COLOR, RESERVATION_STATUS_TEXT } from '@/store/user'
 import { feedback } from '@/utils/feedback'
-import { money, stayRange } from '@/utils/format'
+import { money, reservationRange } from '@/utils/format'
 
 const PAGE_SIZE = 10
 const DAY_FORMAT = 'YYYY-MM-DD'
-
-const STATUS_OPTIONS = Object.entries(RESERVATION_STATUS_TEXT).map(([value, label]) => ({ value, label }))
+const STATUS_OPTIONS = Object.entries(RESERVATION_STATUS_TEXT).map(([value, label]) => ({
+  value,
+  label,
+}))
 
 export default function ReservationReview() {
   const [loading, setLoading] = useState(false)
@@ -35,14 +37,13 @@ export default function ReservationReview() {
   const [venues, setVenues] = useState<Venue[]>([])
   const [total, setTotal] = useState(0)
   const [keywordInput, setKeywordInput] = useState('')
-  // 默认不限定状态：管理员既能一眼看到待确认预约（列表按待确认优先排序），也能看到已完成等历史预约
   const [query, setQuery] = useState<{
     status: string
     venue_id: number | ''
-    start_at: string
+    start_date: string
     keyword: string
     page: number
-  }>({ status: '', venue_id: '', start_at: '', keyword: '', page: 1 })
+  }>({ status: '', venue_id: '', start_date: '', keyword: '', page: 1 })
 
   const [reviewOpen, setReviewOpen] = useState(false)
   const [reviewRow, setReviewRow] = useState<Reservation | null>(null)
@@ -55,7 +56,7 @@ export default function ReservationReview() {
       const data = await reservationApi.page({
         status: query.status,
         venue_id: query.venue_id,
-        start_at: query.start_at,
+        start_date: query.start_date,
         keyword: query.keyword,
         page: query.page,
         page_size: PAGE_SIZE,
@@ -81,13 +82,15 @@ export default function ReservationReview() {
   }, [])
 
   const emptyText = query.status
-    ? `没有「${RESERVATION_STATUS_TEXT[query.status as keyof typeof RESERVATION_STATUS_TEXT]}」的预约，选择「全部状态」可查看历史预约`
+    ? `没有「${RESERVATION_STATUS_TEXT[query.status as keyof typeof RESERVATION_STATUS_TEXT]}」的预约，选择「全部状态」可查看历史记录`
     : '暂无预约记录'
 
   const openReview = (row: Reservation, action: 'confirm' | 'reject') => {
     setReviewRow(row)
     setReviewAction(action)
-    reviewForm.setFieldsValue({ remark: action === 'confirm' ? '已确认，房间已保留' : '' })
+    reviewForm.setFieldsValue({
+      remark: action === 'confirm' ? '已确认，会议室和时段已保留' : '',
+    })
     setReviewOpen(true)
   }
 
@@ -97,7 +100,10 @@ export default function ReservationReview() {
     if (!values) return
     setSubmitting(true)
     try {
-      await reservationApi.review(reviewRow.id, { action: reviewAction, remark: values.remark || '' })
+      await reservationApi.review(reviewRow.id, {
+        action: reviewAction,
+        remark: values.remark || '',
+      })
       feedback.success(reviewAction === 'confirm' ? '预约已确认' : '预约已拒绝')
       setReviewOpen(false)
       await load()
@@ -146,25 +152,39 @@ export default function ReservationReview() {
       ),
     },
     {
-      title: '会议空间 / 会议室类型',
-      width: 190,
+      title: '空间 / 会议室',
+      width: 200,
       ellipsis: true,
       render: (_, row) => (
         <div>
           <div>{row.venue_name}</div>
-          <div style={{ color: token.colorTextTertiary, fontSize: 12 }}>{row.meeting_room_name}</div>
+          <div style={{ color: token.colorTextTertiary, fontSize: 12 }}>
+            {row.meeting_room_name}
+          </div>
         </div>
       ),
     },
-    { title: '使用开始 / 使用结束', width: 180, render: (_, row) => stayRange(row) },
-    { title: '间数 / 人数', width: 100, render: (_, row) => `${row.rooms} 间 / ${row.attendees} 人` },
+    { title: '预约时段', width: 235, render: (_, row) => reservationRange(row) },
+    {
+      title: '间数 / 人数',
+      width: 100,
+      render: (_, row) => `${row.rooms} 间 / ${row.attendees} 人`,
+    },
     { title: '总价', width: 90, render: (_, row) => money(row.total_amount) },
     {
       title: '状态',
       width: 90,
-      render: (_, row) => <Tag color={RESERVATION_STATUS_COLOR[row.status]}>{row.status_text}</Tag>,
+      render: (_, row) => (
+        <Tag color={RESERVATION_STATUS_COLOR[row.status]}>{row.status_text}</Tag>
+      ),
     },
-    { title: '确认意见', dataIndex: 'remark', width: 140, ellipsis: true, render: (value: string) => value || '-' },
+    {
+      title: '确认意见',
+      dataIndex: 'remark',
+      width: 140,
+      ellipsis: true,
+      render: (value: string) => value || '-',
+    },
     {
       title: '操作',
       width: 180,
@@ -173,7 +193,11 @@ export default function ReservationReview() {
         <>
           {row.status === 'pending' && (
             <>
-              <Button type="link" style={{ color: token.colorSuccess }} onClick={() => openReview(row, 'confirm')}>
+              <Button
+                type="link"
+                style={{ color: token.colorSuccess }}
+                onClick={() => openReview(row, 'confirm')}
+              >
                 确认
               </Button>
               <Button type="link" danger onClick={() => openReview(row, 'reject')}>
@@ -182,7 +206,11 @@ export default function ReservationReview() {
             </>
           )}
           {(row.status === 'pending' || row.status === 'confirmed') && (
-            <Button type="link" style={{ color: token.colorWarning }} onClick={() => cancel(row)}>
+            <Button
+              type="link"
+              style={{ color: token.colorWarning }}
+              onClick={() => cancel(row)}
+            >
               取消
             </Button>
           )}
@@ -198,7 +226,7 @@ export default function ReservationReview() {
     <div>
       <Card variant="borderless">
         <div className="page-block-head">
-          <div className="page-title">预约确认</div>
+          <div className="page-title">预约审核</div>
           <div className="page-toolbar">
             <Select
               value={query.status === '' ? undefined : query.status}
@@ -210,20 +238,20 @@ export default function ReservationReview() {
             />
             <Select
               value={query.venue_id === '' ? undefined : query.venue_id}
-              placeholder="全部会议空间"
+              placeholder="全部空间"
               allowClear
               style={{ width: 190 }}
               options={venues.map((item) => ({ value: item.id, label: item.name }))}
               onChange={(value) => setQuery((prev) => ({ ...prev, venue_id: value ?? '', page: 1 }))}
             />
             <DatePicker
-              value={query.start_at ? dayjs(query.start_at, DAY_FORMAT) : null}
-              placeholder="使用开始日期"
-              style={{ width: 160 }}
+              value={query.start_date ? dayjs(query.start_date, DAY_FORMAT) : null}
+              placeholder="开始日期"
+              style={{ width: 150 }}
               onChange={(value: Dayjs | null) =>
                 setQuery((prev) => ({
                   ...prev,
-                  start_at: value ? value.format(DAY_FORMAT) : '',
+                  start_date: value ? value.format(DAY_FORMAT) : '',
                   page: 1,
                 }))
               }
@@ -232,7 +260,7 @@ export default function ReservationReview() {
               value={keywordInput}
               placeholder="搜索会员"
               allowClear
-              style={{ width: 170 }}
+              style={{ width: 160 }}
               onChange={(event) => setKeywordInput(event.target.value)}
               onSearch={() => setQuery((prev) => ({ ...prev, keyword: keywordInput, page: 1 }))}
             />
@@ -249,7 +277,7 @@ export default function ReservationReview() {
           loading={loading}
           columns={columns}
           dataSource={records}
-          scroll={{ x: 1080 }}
+          scroll={{ x: 1150 }}
           locale={{ emptyText }}
           pagination={{
             current: query.page,
@@ -278,13 +306,13 @@ export default function ReservationReview() {
           size="small"
           style={{ marginTop: 20, marginBottom: 16 }}
           items={[
-            { key: 'venue', label: '会议空间', children: reviewRow?.venue_name },
-            { key: 'room', label: '会议室类型', children: reviewRow?.meeting_room_name },
+            { key: 'venue', label: '空间', children: reviewRow?.venue_name },
+            { key: 'room', label: '会议室', children: reviewRow?.meeting_room_name },
             { key: 'user', label: '会员', children: reviewRow?.user_name },
             {
-              key: 'dates',
-              label: '使用开始 / 使用结束',
-              children: reviewRow ? stayRange(reviewRow) : '',
+              key: 'times',
+              label: '预约时段',
+              children: reviewRow ? reservationRange(reviewRow) : '',
             },
             {
               key: 'rooms',
