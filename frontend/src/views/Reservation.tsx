@@ -7,7 +7,7 @@ import type { Reservation as ReservationRecord, Venue } from '@/api/types'
 import ReservationDialog from '@/components/ReservationDialog'
 import { RESERVATION_STATUS_COLOR, RESERVATION_STATUS_TEXT } from '@/store/user'
 import { feedback } from '@/utils/feedback'
-import { money, reservationRange } from '@/utils/format'
+import { canFinishReservation, money, reservationRange } from '@/utils/format'
 
 const PAGE_SIZE = 10
 const STATUS_OPTIONS = Object.entries(RESERVATION_STATUS_TEXT).map(([value, label]) => ({
@@ -69,6 +69,20 @@ export default function Reservation() {
     })
   }
 
+  const finish = (row: ReservationRecord) => {
+    feedback.confirm({
+      title: '结束使用',
+      content: `确认提前结束「${row.venue_name} ${row.meeting_room_name}」的预约吗？剩余时段将立即释放。`,
+      okText: '结束使用',
+      cancelText: '继续使用',
+      onOk: async () => {
+        await reservationApi.finish(row.id)
+        feedback.success('预约已结束，剩余时段已释放')
+        await load()
+      },
+    })
+  }
+
   const columns: TableColumnsType<ReservationRecord> = [
     {
       title: '空间 / 会议室',
@@ -111,14 +125,27 @@ export default function Reservation() {
       title: '操作',
       width: 110,
       fixed: 'right',
-      render: (_, row) =>
-        row.status === 'pending' || row.status === 'confirmed' ? (
+      render: (_, row) => {
+        if (canFinishReservation(row)) {
+          return (
+            <>
+              <Button type="link" style={{ color: token.colorSuccess }} onClick={() => finish(row)}>
+                结束使用
+              </Button>
+              <Button type="link" danger onClick={() => cancel(row)}>
+                取消
+              </Button>
+            </>
+          )
+        }
+        return row.status === 'pending' || row.status === 'confirmed' ? (
           <Button type="link" danger onClick={() => cancel(row)}>
             取消预约
           </Button>
         ) : (
           <span style={{ color: token.colorTextQuaternary }}>-</span>
-        ),
+        )
+      },
     },
   ]
 

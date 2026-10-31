@@ -26,6 +26,7 @@ class Reservation(Base):
     remark: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     reviewer_id: Mapped[int | None] = mapped_column(ForeignKey("sys_user.id"), nullable=True)
     reviewed_at: Mapped[object | None] = mapped_column(DateTime, nullable=True)
+    ended_at: Mapped[object | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[object] = mapped_column(DateTime, nullable=False, server_default=func.now())
 
     venue = relationship("Venue", back_populates="reservations")

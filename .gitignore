@@ -43,6 +43,9 @@ Thumbs.db
 logs/
 tmp/
 *.bak
+*.db
+*.db-shm
+*.db-wal
 
 # ===== 个人文件（不随仓库发布）=====
 RESUME.md

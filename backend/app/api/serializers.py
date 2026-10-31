@@ -84,6 +84,10 @@ def reservation_to_dict(
         "remark": reservation.remark,
         "reviewer_name": (reviewer.name or reviewer.username) if reviewer else "",
         "reviewed_at": reservation.reviewed_at,
+        "ended_at": reservation.ended_at,
+        "ended_early": bool(
+            reservation.ended_at and reservation.ended_at < reservation.end_at
+        ),
         "created_at": reservation.created_at,
     }
 

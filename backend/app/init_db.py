@@ -74,7 +74,7 @@ KNOWLEDGE_SEEDS = [
     {
         "category": "预约流程",
         "question": "怎么预约会议室？",
-        "answer": "进入「空间管理」选择空间，点击「立即预约」，选择开始时间、结束时间、会议室、间数和参会人数后提交。提交后状态为「待确认」，管理员确认后预约生效。也可以直接告诉智能助手，例如「帮我订下周五上午10点到12点的西湖 A 会议室，10人」。",
+        "answer": "进入「空间管理」选择空间，点击「立即预约」，选择开始时间、结束时间、会议室、间数和参会人数后提交。预约时间支持分钟级精度，提交后状态为「待确认」，管理员确认后预约生效。也可以直接告诉智能助手，例如「帮我订下周五上午10点到12点的西湖 A 会议室，10人」。",
         "keywords": "预约,怎么约,订会议室,预约会议,下单",
     },
     {
@@ -98,7 +98,7 @@ KNOWLEDGE_SEEDS = [
     {
         "category": "预约流程",
         "question": "怎么取消预约？",
-        "answer": "在「我的预约」找到状态为「待确认」或「已确认」的预约，点击「取消预约」并确认。已拒绝、已取消、已完成的预约不能再次操作。",
+        "answer": "在「我的预约」找到状态为「待确认」或「已确认」的预约，点击「取消预约」并确认。已确认且已经开始的预约也可以点击「结束使用」，系统会记录实际结束时间并立即释放剩余会议室库存。已拒绝、已取消、已完成的预约不能再次操作。",
         "keywords": "取消预约,退订,取消会议,不去了",
     },
     {
@@ -202,6 +202,11 @@ def ensure_schema_updates() -> None:
     """为对话表补充历史操作卡片字段（幂等）。"""
     additions = [
         ("chat_message", "action", "ALTER TABLE chat_message ADD COLUMN action TEXT NULL"),
+        (
+            "reservation",
+            "ended_at",
+            "ALTER TABLE reservation ADD COLUMN ended_at DATETIME NULL",
+        ),
     ]
     inspector = inspect(engine)
     with engine.begin() as connection:

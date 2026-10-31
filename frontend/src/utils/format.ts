@@ -31,3 +31,13 @@ export function money(value?: number | string | null): string {
   const amount = Number(value || 0)
   return `¥${amount.toFixed(0)}`
 }
+
+export function canFinishReservation(
+  row?: Pick<Reservation, 'status' | 'start_at' | 'end_at'> | null,
+): boolean {
+  if (!row || row.status !== 'confirmed') return false
+  const now = Date.now()
+  const start = new Date(row.start_at).getTime()
+  const end = new Date(row.end_at).getTime()
+  return Number.isFinite(start) && Number.isFinite(end) && now >= start && now < end
+}

@@ -2,6 +2,8 @@
 
 from datetime import date, datetime, time, timedelta
 
+from app.models import Reservation
+from app.services.reservation_service import remaining_rooms
 from helpers import reservation_payload, slot
 
 
@@ -33,6 +35,18 @@ def test_create_reservation_returns_201_with_server_side_total(
     assert body["total_amount"] == 480.0
     assert body["user_id"] == seed.member.id
     assert body["venue_name"] == seed.venue.name
+
+
+def test_create_reservation_accepts_minute_precision(
+    client, seed, member_headers
+):
+    payload = reservation_payload(seed.venue, seed.boardroom, days_from=7)
+    start_at = datetime.fromisoformat(payload["start_at"]).replace(minute=17)
+    payload["start_at"] = start_at.isoformat()
+    payload["end_at"] = (start_at + timedelta(minutes=23)).isoformat()
+    response = client.post("/api/reservations", json=payload, headers=member_headers)
+    assert response.status_code == 201
+    assert response.json()["hours"] == 0.38
 
 
 def test_create_reservation_ignores_client_supplied_price(
@@ -267,3 +281,65 @@ def test_create_reservation_rejects_outside_opening_hours(
     response = client.post("/api/reservations", json=payload, headers=member_headers)
     assert response.status_code == 400
     assert "08:30-20:00" in response.json()["detail"]
+
+
+def test_member_can_finish_active_reservation_early(
+    client, seed, db, member_headers
+):
+    now = datetime.now().replace(second=0, microsecond=0)
+    half_hour_floor = now.replace(minute=0 if now.minute < 30 else 30)
+    start_at = half_hour_floor - timedelta(minutes=30)
+    end_at = half_hour_floor + timedelta(minutes=30)
+    reservation = Reservation(
+        venue_id=seed.venue.id,
+        meeting_room_id=seed.boardroom.id,
+        user_id=seed.member.id,
+        start_at=start_at,
+        end_at=end_at,
+        hours=1,
+        rooms=seed.boardroom.quantity,
+        attendees=10,
+        contact_phone=seed.member.phone,
+        total_amount=120,
+        equipment_request="",
+        status="confirmed",
+        remark="已确认",
+    )
+    db.add(reservation)
+    db.flush()
+
+    response = client.post(
+        f"/api/reservations/{reservation.id}/finish",
+        headers=member_headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "completed"
+    assert body["ended_at"] is not None
+    assert body["ended_early"] is True
+    assert "提前结束" in body["remark"]
+    assert remaining_rooms(
+        db, seed.boardroom, datetime.now(), end_at
+    ) == seed.boardroom.quantity
+
+
+def test_cannot_finish_reservation_before_it_starts(
+    client, seed, member_headers, admin_headers
+):
+    created = client.post(
+        "/api/reservations",
+        json=reservation_payload(seed.venue, seed.boardroom, days_from=7),
+        headers=member_headers,
+    ).json()
+    reviewed = client.post(
+        f"/api/reservations/{created['id']}/review",
+        json={"action": "confirm", "remark": ""},
+        headers=admin_headers,
+    )
+    assert reviewed.status_code == 200
+    response = client.post(
+        f"/api/reservations/{created['id']}/finish",
+        headers=member_headers,
+    )
+    assert response.status_code == 400
+    assert "尚未开始" in response.json()["detail"]

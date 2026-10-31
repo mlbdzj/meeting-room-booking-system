@@ -170,6 +170,7 @@ async function main() {
     await page.goto('http://127.0.0.1:5173/manager/home', { waitUntil: 'networkidle' })
     await page.getByRole('button', { name: '切换到深色主题' }).click()
     await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark')
+    await page.waitForFunction(() => !document.querySelector('.theme-wave'))
     await page.getByText('空间预约排行', { exact: true }).waitFor()
     await page.screenshot({ path: path.join(screenshotDir, 'home-dark.png') })
 

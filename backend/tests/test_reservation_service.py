@@ -233,6 +233,19 @@ def test_validate_rejects_past_start(db, seed):
     assert "开始时间不能早于当前时间" in error.value.detail
 
 
+def test_validate_accepts_minute_precision(db, seed):
+    start_at, _ = slot(days_from=7)
+    payload = _payload(
+        seed.venue,
+        seed.boardroom,
+        start_at=start_at.replace(minute=17),
+        end_at=start_at.replace(minute=47),
+    )
+    venue, meeting_room = validate_reservation(db, seed.member, payload)
+    assert venue.id == seed.venue.id
+    assert meeting_room.id == seed.boardroom.id
+
+
 def test_validate_rejects_rooms_over_quantity(db, seed):
     start_at, end_at = slot(days_from=7)
     payload = _payload(

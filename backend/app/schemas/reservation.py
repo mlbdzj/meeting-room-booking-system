@@ -49,6 +49,8 @@ class ReservationOut(BaseModel):
     remark: str = ""
     reviewer_name: str = ""
     reviewed_at: datetime | None = None
+    ended_at: datetime | None = None
+    ended_early: bool = False
     created_at: datetime | None = None
 
 

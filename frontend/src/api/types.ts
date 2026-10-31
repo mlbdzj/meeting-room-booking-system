@@ -170,6 +170,8 @@ export interface Reservation {
   remark: string
   reviewer_name: string
   reviewed_at?: string | null
+  ended_at?: string | null
+  ended_early: boolean
   created_at?: string | null
 }
 

@@ -229,6 +229,45 @@ def cancel_reservation(
     return _serialize(db, [reservation])[0]
 
 
+@router.post("/{reservation_id}/finish", response_model=ReservationOut)
+def finish_reservation(
+    reservation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """提前结束使用中的预约，并立即释放剩余会议室库存。"""
+    reservation = db.get(Reservation, reservation_id)
+    if reservation is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="预约不存在")
+    if reservation.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权操作该预约")
+    if reservation.status != "confirmed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="只有已确认的预约可以结束使用",
+        )
+
+    now = datetime.now()
+    if now < reservation.start_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="预约尚未开始，如需取消请使用取消预约",
+        )
+    if now >= reservation.end_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="预约已到结束时间",
+        )
+
+    reservation.status = "completed"
+    reservation.ended_at = now
+    existing_remark = reservation.remark.strip()
+    reservation.remark = f"{existing_remark}；提前结束" if existing_remark else "提前结束"
+    db.commit()
+    db.refresh(reservation)
+    return _serialize(db, [reservation])[0]
+
+
 @router.delete("/{reservation_id}", response_model=Message)
 def delete_reservation(
     reservation_id: int,

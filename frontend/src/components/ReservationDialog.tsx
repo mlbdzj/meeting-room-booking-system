@@ -228,7 +228,7 @@ export default function ReservationDialog({
           rules={[{ required: true, message: '请选择开始时间' }]}
         >
           <DatePicker
-            showTime={{ format: 'HH:mm' }}
+            showTime={{ format: 'HH:mm', minuteStep: 1 }}
             format={DATETIME_FORMAT}
             style={{ width: '100%' }}
             disabledDate={(current) => current.isBefore(dayjs(), 'day')}
@@ -242,7 +242,7 @@ export default function ReservationDialog({
           rules={[{ required: true, message: '请选择结束时间' }]}
         >
           <DatePicker
-            showTime={{ format: 'HH:mm' }}
+            showTime={{ format: 'HH:mm', minuteStep: 1 }}
             format={DATETIME_FORMAT}
             style={{ width: '100%' }}
             disabledDate={(current) => current.isBefore(dayjs(), 'day')}

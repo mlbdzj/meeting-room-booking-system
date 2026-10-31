@@ -73,7 +73,6 @@ def validate_reservation(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="开始时间不能早于当前时间")
     if payload.end_at <= payload.start_at:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="结束时间必须晚于开始时间")
-
     open_time = time.fromisoformat(venue.open_time)
     close_time = time.fromisoformat(venue.close_time)
     if payload.start_at.time() < open_time or payload.end_at.time() > close_time:

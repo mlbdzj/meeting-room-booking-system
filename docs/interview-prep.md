@@ -92,7 +92,8 @@ remaining = meeting_room.quantity - SUM(overlapping_reservation.rooms)
 
 ## 五、计费与容量
 
-- 时长按分钟计算后转为小时，支持半小时和 90 分钟；
+- 预约时间支持分钟级精度；
+- 提前结束不修改原计划时段，而是记录 `ended_at` 并把状态改为完成，库存随即释放；
 - 总价使用 `Decimal` 计算：`hourly_price × hours × rooms`；
 - 参会人数不能超过 `capacity × rooms`；
 - 预约时间必须处于空间每天的开放时段内；
@@ -116,6 +117,7 @@ remaining = meeting_room.quantity - SUM(overlapping_reservation.rooms)
 ```text
 pending -> confirmed / rejected / canceled
 confirmed -> completed / canceled
+confirmed + 已到开始时间 -> completed（提前结束）
 ```
 
 - 待确认与已确认占用库存；
@@ -134,9 +136,9 @@ confirmed -> completed / canceled
 
 ## 九、测试
 
-`uv run pytest` 当前包含 103 个用例：
+`uv run pytest` 当前包含 107 个用例：
 
-- 半小时和分钟时长计算；
+- 分钟级时间与提前结束释放库存；
 - 六类时段重叠场景与相邻时段；
 - 活跃/非活跃状态库存统计；
 - 开放时间、容量、余量和价格校验；

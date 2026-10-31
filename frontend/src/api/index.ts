@@ -78,6 +78,7 @@ export const reservationApi = {
   review: (id: number, data: ReservationReviewPayload) =>
     http.post<Reservation>(`/reservations/${id}/review`, data),
   cancel: (id: number) => http.post<Reservation>(`/reservations/${id}/cancel`),
+  finish: (id: number) => http.post<Reservation>(`/reservations/${id}/finish`),
   remove: (id: number) => http.delete<MessageResult>(`/reservations/${id}`),
 }
 

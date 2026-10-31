@@ -20,7 +20,7 @@ import { reservationApi, venueApi } from '@/api'
 import type { Reservation, Venue } from '@/api/types'
 import { RESERVATION_STATUS_COLOR, RESERVATION_STATUS_TEXT } from '@/store/user'
 import { feedback } from '@/utils/feedback'
-import { money, reservationRange } from '@/utils/format'
+import { canFinishReservation, money, reservationRange } from '@/utils/format'
 
 const PAGE_SIZE = 10
 const DAY_FORMAT = 'YYYY-MM-DD'
@@ -126,6 +126,20 @@ export default function ReservationReview() {
     })
   }
 
+  const finish = (row: Reservation) => {
+    feedback.confirm({
+      title: '结束使用',
+      content: `确认提前结束「${row.user_name}」在「${row.venue_name}」的预约吗？剩余时段将立即释放。`,
+      okText: '结束使用',
+      cancelText: '继续使用',
+      onOk: async () => {
+        await reservationApi.finish(row.id)
+        feedback.success('预约已结束，剩余时段已释放')
+        await load()
+      },
+    })
+  }
+
   const remove = (row: Reservation) => {
     feedback.confirm({
       title: '提示',
@@ -204,6 +218,17 @@ export default function ReservationReview() {
                 拒绝
               </Button>
             </>
+          )}
+          {(row.status === 'pending' || row.status === 'confirmed') && (
+            canFinishReservation(row) && (
+              <Button
+                type="link"
+                style={{ color: token.colorSuccess }}
+                onClick={() => finish(row)}
+              >
+                结束
+              </Button>
+            )
           )}
           {(row.status === 'pending' || row.status === 'confirmed') && (
             <Button
