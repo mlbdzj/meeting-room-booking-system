@@ -8,20 +8,20 @@ import {
   Layout as AntdLayout,
   Menu,
   Modal,
-  Tag,
   theme,
   type MenuProps,
 } from 'antd'
-import { DownOutlined } from '@ant-design/icons'
+import { ApartmentOutlined, DownOutlined } from '@ant-design/icons'
 
 import { authApi } from '@/api'
 import type { ProfilePayload } from '@/api/types'
 import AgentChat from '@/components/AgentChat'
+import ThemeToggle from '@/components/ThemeToggle'
 import { navTitle, toMenuItems, visibleNavItems } from '@/config/navigation'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { ROLE_TEXT, useUserStore } from '@/store/user'
+import { useThemeStore } from '@/store/theme'
 import { feedback } from '@/utils/feedback'
-import logo from '@/assets/imgs/logo.png'
 
 const { Header, Sider, Content } = AntdLayout
 
@@ -42,6 +42,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const user = useUserStore((state) => state.user)
+  const themeMode = useThemeStore((state) => state.mode)
   const displayName = user?.name || user?.username || '未登录'
   const { token } = theme.useToken()
 
@@ -127,13 +128,19 @@ export default function Layout() {
     <AntdLayout style={{ minHeight: '100vh' }}>
       <Header className="app-header">
         <div className="app-brand">
-          <img className="app-logo" src={logo} alt="" />
-          <span>智能会议室预约系统</span>
+          <span className="app-brand-mark">
+            <ApartmentOutlined />
+          </span>
+          <span className="app-brand-copy">
+            <strong>会议室预约</strong>
+            <small>Meeting Space</small>
+          </span>
         </div>
         <div className="app-user">
-          <Tag color={user?.role === 'admin' ? 'error' : 'success'}>
-            {user ? ROLE_TEXT[user.role] : '访客'}
-          </Tag>
+          <ThemeToggle compact />
+          {(!user || ROLE_TEXT[user.role] !== displayName) && (
+            <span className="app-role">{user ? ROLE_TEXT[user.role] : '访客'}</span>
+          )}
           <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenu }} trigger={['click']}>
             <span className="app-user-trigger">
               <Avatar size={32} style={{ backgroundColor: token.colorPrimary }}>
@@ -147,7 +154,7 @@ export default function Layout() {
       </Header>
 
       <AntdLayout>
-        <Sider width={224} theme="light" style={{ borderRight: `1px solid ${token.colorSplit}` }}>
+        <Sider width={228} theme={themeMode} className="app-sider">
           <Menu
             mode="inline"
             selectedKeys={[location.pathname]}
@@ -157,8 +164,10 @@ export default function Layout() {
           />
         </Sider>
 
-        <Content style={{ padding: 24 }}>
-          <Outlet />
+        <Content className="app-main-content">
+          <div className="app-content">
+            <Outlet />
+          </div>
         </Content>
       </AntdLayout>
 

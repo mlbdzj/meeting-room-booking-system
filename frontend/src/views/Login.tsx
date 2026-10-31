@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Alert, Button, Form, Input, theme } from 'antd'
-import { LockOutlined, UserOutlined } from '@ant-design/icons'
+import { Button, Form, Input, theme } from 'antd'
+import { ApartmentOutlined, LockOutlined, UserOutlined } from '@ant-design/icons'
 
 import { authApi } from '@/api'
-import logo from '@/assets/imgs/logo.png'
+import ThemeToggle from '@/components/ThemeToggle'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useUserStore } from '@/store/user'
 import { feedback } from '@/utils/feedback'
@@ -46,43 +46,71 @@ export default function Login() {
   }
 
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <img className="login-logo" src={logo} alt="" />
-        <h1 style={{ fontSize: 24, marginTop: 14 }}>会议室预约系统</h1>
-        <div style={{ marginTop: 6, marginBottom: 28, color: token.colorTextTertiary }}>
-          基于 Agent 的智能会议空间预约平台
-        </div>
-
-        <Form form={form} size="large" initialValues={{ username: initialUsername }} onFinish={submit}>
-          <Form.Item name="username" rules={[{ required: true, message: '请输入账号' }]}>
-            <Input prefix={<UserOutlined />} placeholder="请输入账号" allowClear />
-          </Form.Item>
-          <Form.Item name="password" rules={[{ required: true, message: '请输入密码' }]}>
-            <Input.Password prefix={<LockOutlined />} placeholder="请输入密码" />
-          </Form.Item>
-          <Button size="large" type="primary" htmlType="submit" block loading={loading}>
-            登 录
-          </Button>
-          <div style={{ textAlign: 'right', marginTop: 18 }}>
-            还没有账号？请
-            <Link style={{ color: token.colorPrimary }} to="/register">
-              注册
-            </Link>
+    <div className="auth-page">
+      <div className="auth-theme">
+        <ThemeToggle />
+      </div>
+      <div className="auth-shell">
+        <section className="auth-intro">
+          <div className="auth-brand">
+            <span className="app-brand-mark">
+              <ApartmentOutlined />
+            </span>
+            <span className="app-brand-copy">
+              <strong>会议室预约</strong>
+              <small>Meeting Space</small>
+            </span>
           </div>
-        </Form>
+          <div className="auth-eyebrow">SMART WORKSPACE</div>
+          <h1>
+            让每一次会议，
+            <br />
+            找到合适的空间。
+          </h1>
+          <p>更轻量的会议空间管理体验。查看余量、安排时段，也可以直接告诉智能助手你的需求。</p>
+          <div className="auth-points">
+            <span>实时余量</span>
+            <span>自然语言预约</span>
+            <span>权限清晰</span>
+          </div>
+        </section>
 
-        <Alert
-          type="info"
-          style={{ marginTop: 22, textAlign: 'left' }}
-          message={
-            <div>
-              <div>演示账号</div>
-              <div>空间管理员：admin / 123456</div>
-              <div>会员用户：student / 123456</div>
+        <section className="login-box">
+          <div className="auth-form-head">
+            <h2>欢迎回来</h2>
+            <p>登录后继续管理你的会议安排</p>
+          </div>
+
+          <Form form={form} size="large" initialValues={{ username: initialUsername }} onFinish={submit}>
+            <Form.Item name="username" rules={[{ required: true, message: '请输入账号' }]}>
+              <Input prefix={<UserOutlined />} placeholder="账号" allowClear />
+            </Form.Item>
+            <Form.Item name="password" rules={[{ required: true, message: '请输入密码' }]}>
+              <Input.Password prefix={<LockOutlined />} placeholder="密码" />
+            </Form.Item>
+            <Button size="large" type="primary" htmlType="submit" block loading={loading}>
+              登录
+            </Button>
+            <div className="auth-switch">
+              还没有账号？
+              <Link style={{ color: token.colorPrimary }} to="/register">
+                创建账号
+              </Link>
             </div>
-          }
-        />
+          </Form>
+
+          <div className="demo-accounts">
+            <div className="demo-title">演示账号</div>
+            <div>
+              <span>空间管理员</span>
+              <code>admin / 123456</code>
+            </div>
+            <div>
+              <span>会员用户</span>
+              <code>student / 123456</code>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   )

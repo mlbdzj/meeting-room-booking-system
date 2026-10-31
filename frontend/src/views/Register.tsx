@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button, Form, Input, theme } from 'antd'
-import { IdcardOutlined, LockOutlined, PhoneOutlined, UserOutlined } from '@ant-design/icons'
+import {
+  ApartmentOutlined,
+  IdcardOutlined,
+  LockOutlined,
+  PhoneOutlined,
+  UserOutlined,
+} from '@ant-design/icons'
 
 import { authApi } from '@/api'
-import logo from '@/assets/imgs/logo.png'
+import ThemeToggle from '@/components/ThemeToggle'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { feedback } from '@/utils/feedback'
 
@@ -45,14 +51,42 @@ export default function Register() {
   }
 
   return (
-    <div className="register-container">
-      <div className="register-box">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <img style={{ width: 40 }} src={logo} alt="" />
-          <h1 style={{ fontSize: 20 }}>欢迎注册智能会议室预约系统</h1>
-        </div>
+    <div className="auth-page">
+      <div className="auth-theme">
+        <ThemeToggle />
+      </div>
+      <div className="auth-shell register-shell">
+        <section className="auth-intro">
+          <div className="auth-brand">
+            <span className="app-brand-mark">
+              <ApartmentOutlined />
+            </span>
+            <span className="app-brand-copy">
+              <strong>会议室预约</strong>
+              <small>Meeting Space</small>
+            </span>
+          </div>
+          <div className="auth-eyebrow">START IN MINUTES</div>
+          <h1>
+            一个账号，
+            <br />
+            管理所有会议安排。
+          </h1>
+          <p>创建会员账号后即可查看空间、预约会议室，并通过智能助手快速完成安排。</p>
+          <div className="auth-points">
+            <span>简单注册</span>
+            <span>安全登录</span>
+            <span>随时查看</span>
+          </div>
+        </section>
 
-        <Form form={form} labelCol={{ span: 5 }} wrapperCol={{ span: 19 }} size="large" onFinish={submit}>
+        <section className="register-box">
+          <div className="auth-form-head">
+            <h2>创建账号</h2>
+            <p>填写基本信息即可开始使用</p>
+          </div>
+
+          <Form form={form} layout="vertical" size="large" onFinish={submit}>
           <Form.Item
             label="账号"
             name="username"
@@ -100,16 +134,17 @@ export default function Register() {
           >
             <Input.Password prefix={<LockOutlined />} placeholder="请再次输入密码" />
           </Form.Item>
-          <Button size="large" type="primary" htmlType="submit" block loading={loading}>
-            注 册
-          </Button>
-          <div style={{ textAlign: 'right', marginTop: 18 }}>
-            已有账号？请
-            <Link style={{ color: token.colorPrimary }} to="/login">
-              登录
-            </Link>
-          </div>
-        </Form>
+            <Button size="large" type="primary" htmlType="submit" block loading={loading}>
+              创建账号
+            </Button>
+            <div className="auth-switch">
+              已有账号？
+              <Link style={{ color: token.colorPrimary }} to="/login">
+                返回登录
+              </Link>
+            </div>
+          </Form>
+        </section>
       </div>
     </div>
   )

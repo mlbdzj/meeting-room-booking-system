@@ -12,6 +12,35 @@
 - **智能助手保留**：8 个受权限约束的工具，支持大模型 function calling、本地规则引擎降级、知识库检索和会话历史。
 - **自然语言预约**：例如「下周五上午 10 点到 12 点订杭州西湖商务中心西湖 A 会议室，10 人」，生成预约卡片，用户确认后才写库。
 - **双角色权限**：空间管理员与会员用户使用前端路由守卫和后端依赖注入双重校验。
+- **浅色 / 深色主题**：一键切换并记住选择，页面、表格、弹窗和 Agent 对话同步换肤。
+
+## 界面预览
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/login.png" alt="登录页"><br>
+      <sub>简约登录页：浅色 / 深色主题切换</sub></td>
+    <td width="50%"><img src="docs/screenshots/home.png" alt="经营首页"><br>
+      <sub>首页看板：空间、会议室、预约与使用率</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/home-dark.png" alt="深色主题"><br>
+      <sub>深色主题：统一表格、卡片与导航视觉</sub></td>
+    <td><img src="docs/screenshots/venues.png" alt="会议空间管理"><br>
+      <sub>会议空间管理：紧凑表格与清晰状态</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/reservation.png" alt="预约会议室"><br>
+      <sub>预约弹窗：实时余量、容量与费用预估</sub></td>
+    <td><img src="docs/screenshots/reservation-review.png" alt="预约审核"><br>
+      <sub>预约审核：筛选、确认、拒绝和取消</sub></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/screenshots/agent.png" alt="智能助手" width="86%"><br>
+  <sub>智能助手：工具调用来源、知识库建议与自然语言预约</sub>
+</p>
 
 ## 技术栈
 
@@ -77,6 +106,7 @@ uv run pytest
 
 cd ../frontend
 npm run build
+npm run capture:screenshots
 ```
 
 当前覆盖 103 个后端用例，包括自然语言时间解析、时段重叠、容量限制、开放时间、预约幂等、Agent 权限隔离、审核阶段二次校验和会员删除级联清理。
@@ -111,6 +141,7 @@ frontend/
     config/       角色化侧边菜单
     router/       登录与角色守卫
     store/        登录态、预约状态字典
+    theme/        浅色 / 深色主题配置
     views/        空间、会议室、预约、审核、会员、知识库
 docs/
   interview-prep.md

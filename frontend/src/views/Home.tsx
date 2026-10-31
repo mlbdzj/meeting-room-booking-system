@@ -144,11 +144,7 @@ export default function Home() {
             </Button>
             <Button onClick={() => navigate('/manager/reservation')}>我的预约</Button>
             {isAdmin && (
-              <Button
-                color="gold"
-                variant="solid"
-                onClick={() => navigate('/manager/reservation-review')}
-              >
+              <Button onClick={() => navigate('/manager/reservation-review')}>
                 预约审核
               </Button>
             )}
